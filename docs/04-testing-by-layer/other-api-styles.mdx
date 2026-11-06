@@ -1,0 +1,100 @@
+---
+title: Testing GraphQL, gRPC and WebSocket
+sidebar_position: 20.7
+description: What stays the same and what changes when the API is GraphQL, gRPC or WebSocket instead of REST.
+part: 4
+summary: The test thinking is the same as REST. The transport, the contract and the tools change.
+tags: [graphql, grpc, websocket, api]
+reading_time: 6
+related: ["/testing-by-layer/api-testing", "/testing-by-layer/integration-and-contract-testing", "/testing-by-layer/microservices-and-event-driven-testing"]
+---
+
+<TLDR>
+The questions you ask do not change: valid input, invalid input, auth, errors, rules. What changes is how you send a request, how errors are shown and which tools you use. TaskFlow is REST only, so every sample here is **not run**.
+</TLDR>
+
+:::warning[Not run]
+TaskFlow has no GraphQL, gRPC or WebSocket endpoint. Every code sample on this page is not run: TaskFlow has no GraphQL, gRPC or WebSocket endpoint. They show the shape of a test, not a tested result.
+:::
+
+## What and why
+
+REST testing is covered in API testing. Other styles appear when a team needs flexible queries (GraphQL), fast service-to-service calls (gRPC) or live updates (WebSocket).
+
+## What stays the same, what changes
+
+| | GraphQL | gRPC | WebSocket |
+|---|---|---|---|
+| Transport | Usually one HTTP `POST` endpoint | HTTP/2 with Protocol Buffers | One long-lived connection |
+| Contract | Schema | `.proto` file | Often none, only a message convention |
+| Error signal | HTTP 200 is common even for errors; read the `errors` field | gRPC status codes | Close codes or error messages |
+| Same as REST | Auth, rules, boundaries, negative cases | Same | Same |
+| New risks | Expensive nested queries, over-fetching | Version drift between `.proto` files | Ordering, reconnects, messages that never arrive |
+
+The key lesson: do not stop at the HTTP status. For GraphQL, a 200 response can still be a failed operation.
+
+## Tools
+
+| Style | Tools by name | Notes |
+|---|---|---|
+| GraphQL | Any HTTP client (httpx, requests), your pytest suite | See [Learn GraphQL](https://graphql.org/learn/) |
+| gRPC | grpcurl, Postman's gRPC client, generated client stubs | [grpcurl](https://github.com/fullstorydev/grpcurl) is a command-line tool for talking to gRPC servers |
+| WebSocket | Starlette/FastAPI `TestClient`, browser tools | See [FastAPI: testing WebSockets](https://fastapi.tiangolo.com/advanced/testing-websockets/) |
+
+For gRPC clients and servers owned by different teams, contract testing from Integration and contract testing applies too.
+
+## Examples (not run)
+
+GraphQL, as a pytest test. Not run: TaskFlow has no GraphQL, gRPC or WebSocket endpoint.
+
+```python
+# NOT RUN: hypothetical /graphql endpoint
+def test_create_task_with_bad_priority_returns_graphql_error(client, headers):
+    query = 'mutation { createTask(title: "x", priority: "URGENT", projectId: 1) { id } }'
+    r = client.post("/graphql", headers=headers, json={"query": query})
+    assert r.status_code == 200          # HTTP is fine...
+    assert "errors" in r.json()          # ...but the operation failed
+```
+
+gRPC, with grpcurl. Not run: TaskFlow has no GraphQL, gRPC or WebSocket endpoint.
+
+```bash
+# NOT RUN: hypothetical gRPC TaskService
+grpcurl -plaintext -d '{"title":"x","priority":"URGENT","project_id":1}' \
+  localhost:50051 taskflow.TaskService/CreateTask
+# expect: a gRPC error such as InvalidArgument
+```
+
+WebSocket, with the TestClient. Not run: TaskFlow has no GraphQL, gRPC or WebSocket endpoint.
+
+```python
+# NOT RUN: hypothetical /ws/tasks feed that pushes task.status_changed
+def test_status_change_is_pushed(client):
+    with client.websocket_connect("/ws/tasks") as ws:
+        # change a task via REST here, then:
+        assert ws.receive_json()["event"] == "task.status_changed"
+```
+
+## When to use it (and when not to)
+
+| Use these tests when | Skip when |
+|---|---|
+| Your product exposes the style to clients | The style is only inside a library you do not own |
+| Messages need ordering or live delivery checks | A simple REST call covers the risk |
+
+## Do this
+
+- Reuse your REST test ideas: boundaries, auth, negative cases.
+- Assert on the error field or status code of the style, not only HTTP 200.
+- Test reconnect and timeout behaviour for WebSocket.
+
+## Avoid this
+
+- Assuming a green HTTP status means the GraphQL operation worked.
+- Testing WebSockets with fixed sleeps. Wait for a message with a timeout.
+
+## Further reading
+
+- Learn GraphQL
+- grpcurl on GitHub
+- FastAPI: testing WebSockets

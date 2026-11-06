@@ -1,0 +1,85 @@
+---
+title: Test environments
+sidebar_position: 42
+description: The main kinds of test environment, what each one is for, and the traps that make a passing test mean less than it should, with TaskFlow examples.
+part: 7
+summary: Test environments from local to production, with TaskFlow examples of the differences that matter.
+tags: [environments, test-data, ci, configuration]
+reading_time: 7
+related: ["/automation-engineering/test-data-management", "/automation-engineering/ci-cd-and-continuous-testing", "/modern-quality-engineering/testing-in-production"]
+---
+
+<TLDR>
+A test environment is where tests run: a laptop, a CI runner, a shared staging system or production. Each one trades realism against speed and cost. A passing test only tells you what the environment can show, so know which differences matter for each test.
+</TLDR>
+
+## What and why
+
+Tests run in an environment made of code, configuration, data and services. If the environment differs from production in a way that matters, a test can pass and the feature can still fail.
+
+Common environments:
+
+| Environment | Purpose | Typical data | Who uses it |
+|---|---|---|---|
+| Local | Fast feedback while coding | Small, seeded | Developers |
+| CI | Repeatable checks on each change | Fresh per run | Pipeline |
+| Shared test (staging) | Integration and end-to-end checks | Anonymised or synthetic | QA, developers |
+| Pre-production | Final check, production-like config | Production-like volume | Release team |
+| Production | Real users | Real | Everyone, with care |
+
+See [testing in production](/modern-quality-engineering/testing-in-production) for the last row.
+
+## How it works
+
+Three things usually differ between environments:
+
+1. **Configuration.** Different URLs, feature flags, timeouts and secrets.
+2. **Data.** Size, shape and edge cases. Real data has values your test data does not.
+3. **Services.** Real services in one place, stubs or sandboxes in another.
+
+Use the same build artefact in every environment where you can. Change configuration, not code, between them.
+
+## When to use each (and when not to)
+
+| Use it when | Skip it when |
+|---|---|
+| Local: you change code and want a quick answer | You need to prove load or real network behaviour |
+| CI: you need each run to start clean | The check needs a service CI cannot reach |
+| Staging: you test across services | You would share it with real customer data |
+| Pre-production: you need a final check of config | You cannot match production config or data size |
+
+## TaskFlow example
+
+The local TaskFlow shows the kind of difference that matters.
+
+- **Database.** By default it uses SQLite, a file-based database. Run it with `docker compose up` to use Postgres, which is what production uses. See [the TaskFlow reference](/start-here/taskflow-reference). SQLite and Postgres differ in details such as types and constraints. Run the final checks against Postgres.
+- **Tokens.** Login tokens live in the memory of one server process. If you run the app with several worker processes, a token issued by one process is unknown to another. Tests then fail with 401 for no obvious reason. Run one process for these tests.
+- **Data reset.** The API test fixture drops and re-creates the tables before each test. Each test starts from the same seeded data: two users and one project called "Demo project".
+
+Here is how the local run looks in practice:
+
+```bash
+cd examples/taskflow
+. .venv/bin/activate
+pytest -q          # uses a fresh SQLite file for the test run
+```
+
+The pytest settings in `conftest.py` point the tests at a temporary SQLite file. That is fast and clean. It is not the same database as production, so keep a Postgres run in your release checks.
+
+## Do this
+
+- Write down what each environment is for, and what it cannot show.
+- Keep configuration in one place, and version it.
+- Reset or re-seed data before each run, so tests do not depend on each other. (Recommendation)
+- Run one check against the most production-like environment before each release.
+- Record the environment and build version in every test report.
+
+## Avoid this
+
+- Assuming a pass on SQLite means a pass on Postgres.
+- Sharing one test database between teams with no reset.
+- Hiding environment differences in test code with special cases.
+
+## Further reading
+
+No external links for this chapter. Your own environment inventory is the best reference.

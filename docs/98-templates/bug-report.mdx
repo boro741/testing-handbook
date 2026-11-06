@@ -1,0 +1,76 @@
+---
+title: "Template: bug report"
+sidebar_position: 1
+description: A copy-paste bug report template with a filled TaskFlow example.
+part: 98
+summary: Bug report template with steps, expected and actual results.
+tags: [template, bug-report]
+reading_time: 2
+related: []
+---
+
+<TLDR>
+A good bug report lets someone else reproduce the problem without asking you anything. State what you did, what you expected and what happened.
+</TLDR>
+
+## When to use it
+
+Use it each time you find a defect. Write one bug per report.
+
+## Template
+
+```markdown
+# [Area] Short summary of the problem
+
+**Severity:** Critical / Major / Minor / Trivial
+**Priority:** High / Medium / Low
+**Environment:** app version, build, OS, browser or device, test data
+**Reporter / Date:**
+
+## Steps to reproduce
+1.
+2.
+3.
+
+## Expected result
+
+## Actual result
+
+## Evidence
+Screenshot, log lines, request and response, video.
+
+## Notes
+How often it happens. Workaround. Related tests or tickets.
+```
+
+## Filled example
+
+```markdown
+# [Tasks] Cannot reopen a DONE task through the API
+
+**Severity:** Major
+**Priority:** High
+**Environment:** TaskFlow local build 1.0.0, SQLite, curl
+**Reporter / Date:** A. Tester, 2026-11-06
+
+## Steps to reproduce
+1. Log in as alice and create a task in project 1.
+2. Move it TODO, IN_PROGRESS, IN_REVIEW, DONE with PUT /api/tasks/{id}.
+3. Send PUT /api/tasks/{id} with {"status": "REOPENED"}.
+
+## Expected result
+200 and status REOPENED (DONE to REOPENED is allowed).
+
+## Actual result
+409 Conflict.
+
+## Evidence
+Response body and request log attached.
+
+## Notes
+Happens every time. No workaround.
+```
+
+:::info[Illustrative data]
+This bug is invented to show the format. TaskFlow does not have this defect.
+:::

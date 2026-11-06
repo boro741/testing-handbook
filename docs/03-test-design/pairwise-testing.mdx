@@ -1,0 +1,87 @@
+---
+title: Pairwise testing
+sidebar_position: 16
+description: Cover every pair of parameter values with far fewer runs than testing every combination, shown with browser, OS and role.
+part: 3
+summary: Most bugs come from two factors interacting. Pairwise testing covers every pair with a small set of runs.
+tags: [test-design, pairwise, combinatorial, techniques]
+reading_time: 6
+related: [/docs/test-design/decision-tables, /docs/test-design/equivalence-partitioning-and-boundaries]
+---
+
+<TLDR>
+Pairwise testing picks test runs so that every pair of values from any two parameters appears together at least once. With browser, OS and role, it can cover every pair in a fraction of the full combinations. It is a good default when there are too many combinations to run.
+</TLDR>
+
+## What and why
+
+Suppose a feature works in three browsers, on three operating systems, for two roles. That is 18 combinations, and some are impossible. Running all of them every time is slow and expensive.
+
+Many bugs appear only when two settings line up, such as one browser on one OS. Pairwise testing targets that. It makes sure every pair of values appears together in at least one run. It does not find every problem that needs three or more settings to line up.
+
+Recommendation: use pairwise testing for configuration matrices, such as browser, OS, language or role, when the full set is too large.
+
+## How it works
+
+Take browser (Chrome, Firefox, Safari), OS (Windows, macOS, Linux) and role (member, non-member). Safari runs only on macOS, which is a constraint that removes some combinations.
+
+The script below builds a pairwise set. It keeps only the valid combinations, then picks runs greedily until every pair is covered. Greedy means it picks the run that covers the most missing pairs next. It is close to the smallest set, but not guaranteed to be the smallest.
+
+```python
+from itertools import combinations, product
+
+params = [["Chrome", "Firefox", "Safari"], ["Windows", "macOS", "Linux"], ["member", "non-member"]]
+
+def valid(run):  # Safari runs only on macOS
+    return run[0] != "Safari" or run[1] == "macOS"
+
+def pairs(run):
+    return {((i, run[i]), (j, run[j])) for i, j in combinations(range(3), 2)}
+
+candidates = [r for r in product(*params) if valid(r)]
+needed = set().union(*(pairs(r) for r in candidates))
+suite = []
+while needed:
+    best = max(candidates, key=lambda r: len(pairs(r) & needed))
+    suite.append(best)
+    needed -= pairs(best)
+
+print(f"All valid combinations: {len(candidates)}, pairwise suite: {len(suite)}")
+for run in suite:
+    print(" | ".join(run))
+```
+
+Running the script once printed `All valid combinations: 14, pairwise suite: 8`, and listed the 8 runs.
+
+## When to use it (and when not to)
+
+| Use it when | Skip it when |
+|---|---|
+| Many parameters have several values each | There are only two or three combinations |
+| A feature has a configuration matrix | The bug needs one exact sequence of steps |
+| The full matrix is too slow for CI | A specific combination is known to be risky (test it on its own too) |
+
+## TaskFlow example
+
+TaskFlow has no role field. Its only role is project membership, so the example uses "member" and "non-member" as the role. The check is the access rule from the reference: a non-member gets 403.
+
+A pairwise set of 8 runs covers every pair, instead of the 14 valid combinations. Each run then calls the same UI or API check. The browser and OS are set by your test runner, and the role decides which user logs in.
+
+Pairwise does not replace the access tests. It checks that the feature works across the environments, while the decision table checks the access rule itself.
+
+## Do this
+
+- List the parameters and their values before you write any code.
+- Write down the constraints, such as "Safari only on macOS".
+- Add one risky combination on its own, if you know it matters.
+- Check that the suite covers every pair, using a short script or a tool.
+
+## Avoid this
+
+- Assuming pairwise finds every bug. Three-way or sequence bugs need other tests.
+- Forgetting constraints. An impossible combination counts as a failed run.
+
+## Further reading
+
+- [Microsoft PICT](https://github.com/microsoft/pict): a command-line tool that builds pairwise test sets (page checked on 2026-11-06).
+- [Python itertools](https://docs.python.org/3/library/itertools.html): the `combinations` and `product` functions used above (checked 2026-11-06).

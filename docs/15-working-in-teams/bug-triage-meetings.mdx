@@ -1,0 +1,97 @@
+---
+title: Bug triage meetings
+sidebar_position: 15.3
+description: Who attends a bug triage, how to run the agenda, how severity differs from priority, and what a good tester brings to the meeting.
+part: 15
+summary: A triage meeting decides, for each new defect, whether to fix it now, defer it or not fix it. Bring evidence and a clear view of impact.
+tags: [triage, defects, severity, priority, meetings]
+reading_time: 6
+related: [/planning-strategy/defect-management, /working-in-teams/testing-in-agile-teams, /working-in-teams/test-estimation-in-practice]
+---
+
+<TLDR>
+A bug triage meeting is a short, regular meeting that decides what happens to each new defect. The tester brings the evidence and proposes a severity. The product owner sets the priority. The group decides to fix now, defer or not fix. Every decision is written down with an owner.
+</TLDR>
+
+## What and why
+
+Testing finds more defects than a team can fix at once. Without a routine, they pile up. Some get fixed twice, some are never looked at, and some are argued about in chat with no record.
+
+A triage meeting gives each defect one decision and one owner. It also makes the team's trade-offs visible.
+## Who attends
+
+- **The tester**, who reproduces the defect and brings the evidence.
+- **A developer** who can estimate the fix or knows the code involved.
+- **The product owner**, who sets the priority and decides whether a defect is acceptable.
+- **A facilitator**, often the scrum master or test lead, who keeps the meeting on time.
+
+Recommendation: keep the group to about four people. Invite others only for the defects that need them.
+
+## The agenda
+
+The [Bug triage agenda](/templates/bug-triage-agenda) gives a standard order. In short:
+
+1. Review new defects since the last meeting.
+2. Confirm each one can be reproduced, and check for duplicates.
+3. Agree the severity. The tester proposes it.
+4. Agree the priority. The product owner decides it.
+5. Decide: fix now, defer or not fix.
+6. Set an owner and, where needed, a target sprint.
+7. Look at reopened defects and anything blocked.
+
+Give each defect a few minutes. If it needs more time, take it offline and bring the answer back.
+
+## Severity versus priority
+
+Severity is how much harm a defect does to the user or the system. Priority is how soon the team should fix it. They often differ. A rare crash can be high severity and low priority. A small wording error on a busy page can be low severity and high priority. For the field definitions, see [Defect management and the bug life cycle](/planning-strategy/defect-management).
+
+The tester is usually best placed to propose severity, because they saw the failure. The product owner sets priority, because it depends on business choices.
+
+## Fix, defer or won't fix
+
+- **Fix now:** the defect goes into the current sprint or release.
+- **Defer:** the defect is real, but moves to a later sprint. Record the target.
+- **Won't fix:** the team accepts the behaviour and records why. Sometimes the rule is wrong, and the right action is to change the requirement.
+
+Every decision needs a one-sentence reason, such as "defer, because the workaround is simple and the release is small."
+
+## What a good tester brings
+
+- The steps to reproduce, the build version and the exact input used.
+- The expected result, the actual result and the evidence.
+- A plain-English impact, such as "a non-member can read a task".
+- Whether it is a new failure or a regression.
+- A duplicate check, so the group does not discuss the same defect twice.
+- A proposed severity, with a short reason.
+
+## TaskFlow example
+
+:::info[Illustrative data]
+These three defects are written for this page. They are described in words, and no numbers come from a real run.
+:::
+
+**Defect 1: a non-member can read a task.** A user who is not in the project can open a task by its ID and see its details. The rule says only project members can see or change its tasks. The tester proposes High severity, because private work is exposed. The product owner agrees on High priority. The decision is fix now, and the tester checks the fix on the same build.
+
+**Defect 2: a 101-character title is saved.** The rule says a title must be 1 to 100 characters, but the API accepts a longer one. The tester proposes Low severity, because the data is wrong but nothing breaks. The product owner sets Medium priority, because the title limit is a stated rule. The team fixes it in the next sprint.
+
+**Defect 3: a priority of "URGENT" is accepted.** The rule allows only LOW, MEDIUM and HIGH, but the API stores other text as the priority. The tester proposes Medium severity, because invalid data is saved. The product owner sets Low priority, because no user is blocked. The team defers it and records a target sprint.
+## Do this
+
+- Bring evidence, not only an opinion.
+- Propose a severity, and let the product owner set priority.
+- Record every decision with an owner and a reason.
+- Check for duplicates before the meeting, not during it.
+- Keep the meeting short and regular.
+
+## Avoid this
+
+- Reopening a decision in chat after the meeting has closed it.
+- Using priority as a way to argue about severity.
+- Deferring a defect with no target and no owner.
+- Bringing a defect with no steps, and asking the group to reproduce it.
+
+## Further reading
+
+- [Defect management and the bug life cycle](/planning-strategy/defect-management) explains the states a defect moves through and how to write a report.
+- [Testing in agile teams](/working-in-teams/testing-in-agile-teams) shows where triage fits in a sprint.
+- [Test estimation in practice](/working-in-teams/test-estimation-in-practice) helps size the fix and retest work for a deferred defect.

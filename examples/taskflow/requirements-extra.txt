@@ -1,0 +1,16 @@
+# Optional tools. Install on top of requirements-dev.txt only when you need them:
+#   pip install -r requirements-dev.txt -r requirements-extra.txt
+#
+# Browser tests (ui-tests/ and visual/). After installing, download a browser once:
+#   python -m playwright install chromium
+pytest-playwright==0.10.0
+playwright==1.64.1
+pillow==13.0.0
+
+# Mutation testing and coverage (the mutation testing chapter)
+mutmut==3.8.1
+coverage==7.17.2
+
+# Static analysis (the static analysis chapter)
+ruff==0.17.4
+bandit==1.9.4

@@ -1,0 +1,93 @@
+---
+title: Database performance
+sidebar_position: 59
+description: Slow queries, missing indexes, lock waits and pool saturation, with a worked TaskFlow example that checks the task list query.
+part: 10
+summary: Find the slow query, check its plan, add the right index, and re-run the same load test.
+tags: [performance, database, sql, indexes, query-plan, locks, connection-pool]
+reading_time: 7
+related: ["/testing-by-layer/backend-and-database-testing", "/performance-by-layer/backend-api-performance", "/performance-fundamentals/finding-bottlenecks"]
+---
+
+<TLDR>
+Many slow APIs are slow database queries. The usual causes are missing indexes, queries that scan too many rows, lock waits, and a full connection pool. Find the slow query with the database's own tools, check its plan, fix it, and re-run the same load test.
+</TLDR>
+
+## What and why
+
+One database often serves every part of an application. A single bad query hurts every request that waits for it.
+
+The main causes:
+
+- **Slow queries:** a query reads far more rows than it returns.
+- **Missing indexes:** the database has no fast way to find the rows.
+- **Lock waits:** one transaction waits for rows that another transaction holds.
+- **Pool saturation:** requests wait for a free connection (see [backend API performance](/performance-by-layer/backend-api-performance)).
+- **N+1 queries:** code runs one query per item in a list, instead of one query for the whole list.
+
+An **index** is a sorted copy of one or more columns. It lets the database find matching rows quickly, like an index at the back of a book. Indexes make reads faster and writes slightly slower, and they take space.
+
+## How it works
+
+Use the database's own tools to see the work it does:
+
+- **EXPLAIN** (PostgreSQL and SQLite both support it) shows the query plan: whether the database scans the whole table or uses an index.
+- The **slow query log** (or your database's equivalent) lists the queries that take longest under load.
+- **Lock and wait views** show which sessions are waiting for others.
+
+Read the plan before you change anything. Then change one thing, and run the same load test again.
+
+| Plan shows | Likely meaning |
+|---|---|
+| Full table scan on a large table | A missing index on the filter column |
+| Sort step on many rows | An index that matches the sort order is missing |
+| Index used, but many rows read | The filter is not selective, or the index is too broad |
+
+## When to use it (and when not to)
+
+| Use it when | Skip it when |
+|---|---|
+| Latency grows as data grows, even at the same request rate | The database is idle and latency is high. Check the network or the application first |
+| A query appears at the top of the slow log | A query runs once a day in a batch job with no user waiting |
+| Pool waits or lock waits show in traces | You only need a small data check. Use [backend and database testing](/testing-by-layer/backend-and-database-testing) |
+
+## TaskFlow example
+
+The local app stores tasks in a `tasks` table. The list endpoint in `app/main.py` runs a query equivalent to this (SQLAlchemy builds the real SQL, so check the exact text with logging if you need it):
+
+```sql
+SELECT id, title, priority, status, project_id, assignee_id
+FROM tasks
+WHERE project_id = 1
+ORDER BY id;
+```
+
+The `project_id` column is a foreign key to `projects`. The model in `app/main.py` does not declare an index on `tasks.project_id`. A foreign key does not always create an index, so check your database. In PostgreSQL, for example, you must create one yourself.
+
+A worked check:
+
+1. Seed the database with many more tasks than the demo has. Use realistic counts for your product.
+2. Run `EXPLAIN` on the query. Look for a sequential scan on `tasks`.
+3. Run the Locust list scenario, or the k6 list request, and record p95 for `GET /api/tasks`.
+4. If the plan shows a scan, add an index on `(project_id, id)` in a migration. Do not change the demo app in this chapter.
+5. Run the same load test again, with the same data, and compare.
+
+A composite index on `(project_id, id)` matches both the filter and the sort. Confirm that with the plan, not with this text.
+
+## Do this
+
+- Test with realistic row counts. Twenty rows hide every query problem.
+- Read the query plan before you change the schema.
+- Index the columns used in filters, joins and sorts. Measure the write cost.
+- Keep connection pool size within the database's connection limit.
+- Re-run the same load test after each change, and keep the before and after results.
+
+## Avoid this
+
+- Raising the pool size to hide a slow query. It moves the queue to the database.
+- Adding indexes without checking the plan. Some indexes are never used.
+- Testing on an empty database and calling the results final.
+
+## Further reading
+
+For schema and data checks in functional tests, see [backend and database testing](/testing-by-layer/backend-and-database-testing).

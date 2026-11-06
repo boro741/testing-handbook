@@ -1,0 +1,70 @@
+---
+title: Requirements and testability
+sidebar_position: 6
+description: How to spot a requirement you cannot test, and how to rewrite it so the test result is clear.
+part: 2
+summary: A testable requirement is clear, specific and has a pass or fail answer. Find the gaps before coding starts.
+tags: [planning, requirements, testability]
+reading_time: 5
+related: [/docs/planning-strategy/test-strategy-vs-plan, /docs/test-design/equivalence-partitioning-and-boundaries]
+---
+
+<TLDR>
+A requirement is testable when you can say, for a given input, exactly what the result should be. Vague words such as "fast", "easy" and "too long" are the usual problem. Rewrite them with numbers and examples before anyone writes code.
+</TLDR>
+
+## What and why
+
+A **requirement** says what the product must do. **Testability** is how easily you can check that it does. A requirement you cannot test is a risk, because two people will read it two ways.
+
+Testers help most before development starts. A question like "what happens if the title is 101 characters?" can save a defect.
+
+## How it works
+
+Check each requirement against these questions:
+
+| Check | Weak example | Better example |
+|---|---|---|
+| Is it specific? | "Titles should not be too long." | "A title must be 1 to 100 characters." |
+| Is it measurable? | "The page should be fast." | "The task list loads within the time agreed in the performance requirement." |
+| Is it one rule? | "Users can create and assign tasks." | Split into two rules, one each. |
+| Does it say what happens on error? | "Users can assign a task." | "A task can be assigned only to a project member. Otherwise the API returns 422." |
+| Does it have examples? | None | A table of valid and invalid titles. |
+
+Recommendation: a requirement is ready for testing when a tester can write a pass or fail check for each rule without asking anyone.
+
+## When to use it (and when not to)
+
+| Use it when | Skip it when |
+|---|---|
+| A requirement is new or changing | The requirement is already tested and stable |
+| Two people read the same sentence differently | The change is a typo fix |
+| The team is planning a sprint or release | The requirement is only a design idea that will be dropped |
+
+## TaskFlow example
+
+Before the title rule was written, the requirement might have said: "Tasks should have a reasonable title." That is not testable.
+
+Rewritten, it becomes:
+
+- A task title must be 1 to 100 characters.
+- A title of 0 characters or 101 characters returns HTTP 422.
+- A title of 1 or 100 characters is accepted.
+
+Each line now has a pass or fail answer. The rule matches the TaskFlow reference, and the API test in `examples/taskflow/tests/test_taskflow_api.py` checks the boundary values.
+
+## Do this
+
+- Ask "what would the answer be for X?" for every rule.
+- Write examples next to the rule, including invalid input.
+- Replace adjectives with numbers, or agree a definition of the word.
+- Review requirements with a developer and a tester together.
+
+## Avoid this
+
+- Writing "should work" as a requirement.
+- Leaving error behaviour out, because the happy path is usually the only thing described.
+
+## Further reading
+
+Once the rules are testable, use [Equivalence partitioning and boundary values](/test-design/equivalence-partitioning-and-boundaries) to pick the test inputs.

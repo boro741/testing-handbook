@@ -1,0 +1,21 @@
+$kind: http-request
+id: 4479132a2c209beea77d06a2
+name: 3 Title 100 chars
+method: POST
+url: '{{baseUrl}}/api/tasks'
+body:
+  type: json
+  content: '{"title":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","priority":"LOW","project_id":1}'
+headers:
+  - key: Content-Type
+    value: application/json
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{token}}'
+scripts:
+  - type: afterResponse
+    code: |
+      pm.test("100-character title is accepted (201)", () => pm.response.to.have.status(201));
+    language: text/javascript

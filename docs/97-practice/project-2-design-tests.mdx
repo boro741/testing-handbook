@@ -1,0 +1,125 @@
+---
+title: "Project 2: design the tests"
+sidebar_position: 97.9
+description: "Capstone step 2: turn the requirements into a test list with boundary values, a decision table, state transitions, negative cases and traceability."
+part: 97
+summary: "Design TaskFlow tests from your requirements using boundary values, a decision table, state transitions, negative cases and a traceability table."
+tags: [practice, capstone, test-design, boundaries, decision-table, state-transition, traceability]
+reading_time: 7
+related: ["/practice/project-overview", "/practice/project-1-requirements-and-risk", "/start-here/taskflow-reference"]
+---
+
+<TLDR>
+Turn your requirements into concrete tests. Use four design techniques, then link every test back to a requirement.
+The expected results come from the TaskFlow reference. A model answer is at the end of the page.
+</TLDR>
+
+## What and why
+
+A test design is a list of cases. Each case has an input, a starting condition and an expected result. You cannot test
+every value, so four techniques help you choose a small set that still finds problems.
+
+- **Boundary values** test the edges of a range. For a range of 1 to 100, test 0, 1, 100 and 101.
+- **Decision tables** list the conditions that combine to give a result. Each column is one combination of conditions.
+- **State transitions** show the states of an item and the moves between them. You test the allowed moves and the
+  forbidden ones.
+- **Negative cases** check that bad input fails in the right way: missing data, wrong values, or no access.
+
+A **traceability table** links each requirement to the tests that check it. A requirement with no test is untested.
+
+Expected results come from the TaskFlow reference, not from copying the app's output. If you copy the output, a defect
+becomes the expected result and the test can never fail.
+
+## Your work
+
+**Task 1: boundary values.** Make one table for the title rule and one for the priority rule. Each row needs the input,
+the expected status code and whether a task is saved.
+
+**Task 2: decision table for assignment.** Use the Assignment and Access rules. The conditions are: does the task exist,
+is the caller a project member, and is the assignee a project member. Add one column per combination that can really
+happen, and state the result for each.
+
+**Task 3: state transitions.** List every allowed move in the status flow. Then list at least six forbidden moves. Say
+what the API does when the new status equals the current status.
+
+**Task 4: negative cases.** List at least eight negative cases. For each, give the expected status code and what must not
+change.
+
+**Task 5: traceability.** Map each requirement from project 1 to the test IDs that check it. Mark any requirement with no
+test, and any rule in the reference with no requirement.
+
+Hint: look at the rules in the reference that are not in your six requirements. Ask whether each one needs its own
+requirement before you trace its tests.
+
+## Common mistakes
+
+- Testing only the valid edge and never the value just outside it.
+- Writing "returns an error" without a status code.
+- Forgetting that a state move starts from a particular state. The same new status can be allowed from one state and
+  forbidden from another.
+
+## Model answer
+
+<details>
+<summary>Show the answer</summary>
+
+**Boundary values, title** (Title rule, 1 to 100 characters)
+
+| Test | Title length | Expected |
+|---|---|---|
+| BV1 | 0 | 422, no task saved |
+| BV2 | 1 | 201 |
+| BV3 | 100 | 201 |
+| BV4 | 101 | 422, no task saved |
+
+**Priority** (Priority rule: LOW, MEDIUM, HIGH)
+
+| Test | Priority | Expected |
+|---|---|---|
+| P1 | `LOW`, `MEDIUM`, `HIGH` (one case each) | 201 |
+| P2 | `low` (lower case) | 422 |
+| P3 | `URGENT` | 422 |
+| P4 | empty string | 422 |
+| P5 | field missing | 422 |
+
+**Decision table, assignment.** The app checks the task, then the caller, then the assignee.
+
+| Task exists | Caller is member | Assignee is member | Expected |
+|---|---|---|---|
+| No | any | any | 404 |
+| Yes | No | any | 403 |
+| Yes | Yes | No (or unknown user id) | 422, assignee unchanged |
+| Yes | Yes | Yes | 200, assignee set |
+
+**State transitions** (status flow)
+
+- Allowed, 200: TODO to IN_PROGRESS; IN_PROGRESS to IN_REVIEW; IN_PROGRESS to TODO; IN_REVIEW to DONE; IN_REVIEW to
+  IN_PROGRESS; DONE to REOPENED; REOPENED to IN_PROGRESS.
+- Forbidden, 409: TODO to IN_REVIEW; TODO to DONE; IN_PROGRESS to DONE; DONE to IN_PROGRESS; DONE to TODO; REOPENED
+  to DONE; any unknown value such as `FOO`.
+- Same status, for example TODO to TODO: 200, and the status does not change.
+
+**Negative cases** (expected result)
+
+- No token, invalid token or wrong password: 401.
+- A non-member reads, changes, assigns or deletes a task, or lists a project's tasks: 403.
+- A task or project id that does not exist: 404.
+- A title of 101 characters, a priority of `URGENT` or a missing title: 422.
+- An unknown status such as `FOO`: 409.
+
+**Traceability**
+
+| Requirement | Tests |
+|---|---|
+| R1 create a task | Valid create returns 201 with status TODO |
+| R2 title length | BV1 to BV4 |
+| R3 priority | P1 to P5 |
+| R4 membership | Non-member create returns 403 |
+| R5 team visibility | Member read and list; non-member read (403) |
+| R6 authentication | No token; invalid token |
+| None yet | Status flow, assignment table |
+
+The status flow and assignment rules are not among R1 to R6. Write R7 and R8 from the Business rules before you trace
+those tests.
+
+</details>

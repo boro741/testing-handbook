@@ -1,0 +1,100 @@
+---
+title: Performance metrics
+sidebar_position: 50
+description: Percentiles (p50, p95, p99), throughput, concurrency and Little's Law, with a worked TaskFlow example.
+part: 9
+summary: The numbers that describe performance. Percentiles, throughput, concurrency and how they connect.
+tags: [performance, percentiles, throughput, latency, littles-law]
+reading_time: 7
+related: ["/performance-fundamentals/performance-testing-types", "/performance-fundamentals/workload-modelling", "/performance-fundamentals/performance-requirements-and-slos"]
+---
+
+<TLDR>
+Average response time hides slow requests, so report percentiles: p50 for the typical request, p95 and p99 for the slow tail. Throughput is how much work finishes per second. Little's Law links concurrency, throughput and response time, so you can estimate how many users a test needs.
+</TLDR>
+
+## What and why
+
+**Latency** is how long one request takes, from send to last byte. **Response time** means the same thing in most tools.
+
+**Percentiles** describe a spread of values. The p95 is the value that 95% of requests are at or below. Only 5% are slower.
+
+- **p50** (median): the typical request.
+- **p95**: the slow end that most users notice on a bad day.
+- **p99**: the very slow tail. It shows rare but painful waits.
+
+**Throughput** is completed work per second, such as requests per second (RPS).
+
+**Concurrency** is how many requests are in progress at the same moment.
+
+**Error rate** is failed requests divided by all requests. Check it next to latency, because a fast error still looks quick.
+
+## How it works
+
+Here is a worked example with 20 timings for `GET /api/tasks`, sorted from fastest to slowest.
+
+:::info[Illustrative data]
+These 20 values are made up for teaching. They are not measurements.
+:::
+
+`42, 45, 47, 48, 50, 51, 53, 55, 58, 60, 62, 64, 70, 75, 81, 95, 120, 180, 410, 900` (milliseconds)
+
+Using the nearest-rank method, the position for a percentile is the rank `ceil(p × N)`, where N is 20:
+
+- **p50:** rank 10, so **60 ms**.
+- **p95:** rank 19, so **410 ms**.
+- **p99:** rank 20, so **900 ms**.
+- **Mean (average):** 2566 ÷ 20 = **128 ms**.
+
+The average (128 ms) looks fine. The p95 (410 ms) shows that one request in twenty is more than six times slower. Tools may use slightly different percentile methods, so compare runs made with the same tool.
+
+### Little's Law
+
+Little's Law says that, in a stable system:
+
+**L = λ × W**
+
+- **L** is the average number of requests in progress (concurrency).
+- **λ** (lambda) is the arrival rate, which equals throughput when the system is stable.
+- **W** is the average time each request spends in the system (response time).
+
+:::info[Illustrative data]
+Worked TaskFlow example, using made-up numbers:
+- Target: 20 requests per second to `GET /api/tasks`, with an average response time of 0.25 s. Then L = 20 × 0.25 = **5 requests in progress**.
+- If the system slows to 1 s at the same 20 requests per second, L = 20 × 1 = **20 requests in progress**.
+
+The same load now needs four times the concurrency. A load test with a fixed number of users will send less traffic once the system slows, so watch throughput too.
+:::
+
+Little's Law also helps size a test. Each Locust user waits between tasks. In `locustfile.py`, `wait_time = between(0.5, 2)` gives a mean wait of 1.25 s. A rough estimate for 20 requests per second at 0.25 s response time is 20 × (0.25 + 1.25) = **30 users**. Treat that as a starting point, not a result.
+
+## When to use it (and when not to)
+
+| Use it when | Skip it when |
+|---|---|
+| You need one number for a target, such as p95 | You only have averages. Ask for percentiles first |
+| You compare two runs | Sample counts are very small. A p99 from 20 requests is just the slowest request |
+| You size a test from a target rate | You have no idea of real think time. Use the workload model first |
+
+A common rule of thumb (Recommendation): have at least 100 samples before you report a p99.
+
+## TaskFlow example
+
+Run the Locust smoke test from [performance testing types](/performance-fundamentals/performance-testing-types). Locust prints p50, p95 and p99 for each endpoint in its CSV stats file. Read the `Aggregated` row for the whole test, and the per-endpoint rows for detail. The gate in [Hands-on: Locust with pytest](/load-testing-tools/locust-with-pytest) reads the p95 from that file.
+
+## Do this
+
+- Report p50, p95 and p99 together, with the request count and the error rate.
+- Read throughput and latency together. Higher RPS with the same latency is good. Higher RPS with rising latency means the system is near its limit.
+- Use Little's Law to check that your user count can produce the rate you want.
+- Keep the same percentile method when you compare two runs.
+
+## Avoid this
+
+- Reporting only the average.
+- Reading a p99 from a short run with few requests.
+- Judging a run by throughput alone, while errors rise in the background.
+
+## Further reading
+
+- [Glossary](/start-here/glossary) for the short definitions of p95, throughput and latency.

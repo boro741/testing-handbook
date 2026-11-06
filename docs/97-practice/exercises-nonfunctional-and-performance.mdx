@@ -1,0 +1,187 @@
+---
+title: "Exercises: non-functional and performance"
+sidebar_position: 97.4
+description: "Eight exercises on SLOs, percentiles, load profiles, scaling, security risks, soak tests and a Locust run, all on TaskFlow. Try each one first."
+part: 97
+summary: SLOs, percentiles, load profiles, reading results, scale decisions, OWASP risks, memory growth and a real Locust run on TaskFlow.
+tags: [practice, exercises, performance, slo, load-testing, security]
+reading_time: 7
+related: ["/practice/learning-paths", "/practice/exercises-modern-and-ai", "/performance-fundamentals/performance-metrics", "/load-testing-tools/locust-with-pytest"]
+---
+
+<TLDR>
+Eight exercises on non-functional testing and performance. Seven ask you to reason from a short scenario. The last one asks you to run a Locust script against a local TaskFlow. Each exercise has a task, a hint and an answer that you open after you try.
+</TLDR>
+
+## What and why
+
+These exercises practise turning "it must be fast" into numbers, reading results, and choosing between a test and a fix. Rules come from the [TaskFlow reference](/start-here/taskflow-reference).
+
+## Exercise 1: Write an SLO
+
+**Task:** Write one SLO for `POST /api/tasks`. Name the measure, the endpoint, the load and the time window.
+
+**Hint:** An SLO has four parts. See [performance requirements, SLOs and baselines](/performance-fundamentals/performance-requirements-and-slos).
+
+<details>
+<summary>Show the answer</summary>
+
+"The p95 response time of `POST /api/tasks` is under 500 ms at 20 requests per second, measured over a 5-minute window."
+
+These numbers are a Recommendation from the SLO page. Agree your own with the product owner.
+
+</details>
+
+## Exercise 2: Pick the percentile
+
+**Task:** A team wants one number that means "one request in twenty is slower than this". Which percentile is it? Then find its value in these 20 response times.
+
+:::info[Illustrative data]
+Invented for practice, in milliseconds: 42, 45, 47, 48, 50, 51, 53, 55, 58, 60, 62, 64, 70, 75, 81, 95, 120, 180, 410, 900.
+:::
+
+**Hint:** Use the nearest-rank method: position = percentile × N, rounded up. N is 20.
+
+<details>
+<summary>Show the answer</summary>
+
+It is the **p95**. Position 0.95 × 20 = 19, and the 19th value is **410 ms**. The mean of about 128 ms hides that slow request.
+
+</details>
+
+## Exercise 3: Decide the load profile
+
+**Task:** Your team must run a 10-minute test that checks task creation at the expected peak. Pick one profile:
+
+- A. 10 users for one minute, then stop.
+- B. A short ramp, then the expected peak held steady for the rest of the 10 minutes.
+- C. Keep adding users every few seconds until the system fails.
+- D. One user sending requests for 10 minutes.
+
+**Hint:** Match the question to a test type. See [performance testing types](/performance-fundamentals/performance-testing-types).
+
+<details>
+<summary>Show the answer</summary>
+
+**B.** It is a load test. A is a smoke run, too short and too light. C is a stress test, which finds the breaking point. D checks one user, not peak load.
+
+</details>
+
+## Exercise 4: Read the results and decide
+
+**Task:** The SLO says the p95 of `POST /api/tasks` must be under 500 ms, and every endpoint must have an error rate under 1%. Decide pass or fail, and name the row that decides.
+
+:::info[Illustrative data]
+Invented for practice.
+
+| Endpoint | p95 (ms) | Error rate |
+|---|---|---|
+| `POST /api/tasks` | 540 | 0.2% |
+| `GET /api/tasks` | 120 | 0.0% |
+| `GET /api/tasks/{id}` | 210 | 0.4% |
+:::
+
+**Hint:** One broken rule fails the whole run.
+
+<details>
+<summary>Show the answer</summary>
+
+**Fail.** The `POST /api/tasks` p95 of 540 ms is above 500 ms. The error rates and the GET rows are within target. Investigate the create endpoint before you call the run a pass.
+
+</details>
+
+## Exercise 5: Scale out or fix the database
+
+**Task:** Part A: during the peak, each `task-service` task runs at 90% CPU, p95 rises with load, and the database uses 30 of its 100 connections. Is adding tasks the right fix? Part B: now the database uses all 100 connections, each task runs at 35% CPU, and requests wait for a connection. Is adding tasks the right fix?
+
+**Hint:** Adding tasks is scale out. Ask which resource is full. See [per-task capacity and task count](/ecs-performance/per-task-capacity-and-task-count).
+
+<details>
+<summary>Show the answer</summary>
+
+**Part A: yes.** CPU is the limit and the database has spare connections, so more tasks add capacity.
+
+**Part B: no.** The connection limit is the bottleneck, and more tasks open more connections. Fix the pool, the slow queries or the database limit first.
+
+</details>
+
+## Exercise 6: Pick the OWASP risk
+
+**Task:** A logged-in user, `bob`, changes the task ID in `GET /api/tasks/42` and gets a 200 for a task in a project he is not in. Which OWASP Top 10 (2025) category fits best?
+
+**Hint:** Think about who may see which record. See [security testing fundamentals](/other-non-functional/security-testing).
+
+<details>
+<summary>Show the answer</summary>
+
+**A01 Broken Access Control.** Bob logged in correctly, and no input reached a query, so neither authentication failure nor injection fits. See also [API security and injection](/other-non-functional/api-security-and-injection).
+
+</details>
+
+## Exercise 7: Read a memory trend
+
+**Task:** A soak test holds a flat load for four hours. Task memory climbs from about 1,020 MiB to about 1,640 MiB and keeps rising. The hard limit is 2,048 MiB. Choose the best first action: (a) raise task memory to 4 GB, (b) profile the service to find what grows, (c) stop the test and call it a pass, or (d) stop watching memory.
+
+:::info[Illustrative data]
+Invented to match the soak test page.
+:::
+
+**Hint:** A rising line under flat load is a suspect, not a verdict. See [soak tests and memory leaks](/ecs-performance/soak-tests-and-memory-leaks).
+
+<details>
+<summary>Show the answer</summary>
+
+**(b).** The line shows that memory grows, not why. Raising memory hides the growth, so the next failure comes later and is bigger.
+
+</details>
+
+## Exercise 8: Run a Locust script
+
+**Task:** Save the script below outside the repository. Start the local TaskFlow API on port 8201 with its own database file. Run Locust with 10 users for 30 seconds and record each endpoint's requests, failures and p95.
+
+```python
+from locust import HttpUser, between, task
+
+
+class TaskFlowCreateUser(HttpUser):
+    wait_time = between(0.5, 1.5)
+
+    def on_start(self):
+        r = self.client.post("/api/auth/login",
+                             json={"username": "alice", "password": "alice-pass"},
+                             name="POST /api/auth/login")
+        self.headers = {"Authorization": f"Bearer {r.json()['token']}"}
+
+    @task(3)
+    def create_task(self):
+        self.client.post("/api/tasks", headers=self.headers, name="POST /api/tasks",
+                         json={"title": "Load test task", "priority": "LOW", "project_id": 1})
+
+    @task(1)
+    def list_tasks(self):
+        self.client.get("/api/tasks?project_id=1", headers=self.headers, name="GET /api/tasks")
+```
+
+**Hint:** Locust prints a summary table, then a percentile table. Use the `Aggregated` row for the whole run.
+
+<details>
+<summary>Show the answer</summary>
+
+Start the server from `examples/taskflow` with `DATABASE_URL=sqlite:////tmp/p2.db uvicorn app.main:app --port 8201`. Then run:
+
+```bash
+locust -f locustfile.py --host http://localhost:8201 --headless -u 10 -r 2 -t 30s --csv /tmp/p2-locust/run --only-summary
+```
+
+This is my real output (Locust 2.32.4, local laptop, 10 users, 2 per second spawn rate):
+
+| Endpoint | Requests | Failures | p95 (ms) |
+|---|---|---|---|
+| `POST /api/auth/login` | 10 | 0 | 10 |
+| `POST /api/tasks` | 190 | 0 | 12 |
+| `GET /api/tasks` | 69 | 0 | 12 |
+| Aggregated | 269 | 0 | 12 |
+
+The aggregated median was 4 ms and the maximum 16 ms. This is one practice run on a laptop, so it says nothing about ECS or the production SLO. The server was stopped afterwards.
+
+</details>

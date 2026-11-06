@@ -1,0 +1,43 @@
+---
+title: "Template: traceability matrix"
+sidebar_position: 5
+description: A copy-paste requirements traceability matrix with TaskFlow business rules.
+part: 98
+summary: Table mapping requirement to test case to result.
+tags: [template, traceability]
+reading_time: 2
+related: ["/planning-strategy/writing-test-cases"]
+---
+
+<TLDR>
+A traceability matrix links each requirement to the tests that check it and their latest result. It shows gaps: a requirement with no test.
+</TLDR>
+
+## When to use it
+
+Use it when you must show coverage of requirements, for example before a release or an audit. Keep it small, or it will go stale.
+
+## Template
+
+```markdown
+| Req ID | Requirement | Test case(s) | Result | Notes |
+|---|---|---|---|---|
+| R-1 | | TC- | Pass / Fail / Not run | |
+```
+
+## Filled example
+
+| Req ID | Requirement | Test case(s) | Result | Notes |
+|---|---|---|---|---|
+| BR-1 | Title is 1 to 100 characters | TC-001 (0), TC-002 (1), TC-003 (100), TC-004 (101) | Pass | Boundary values |
+| BR-2 | Priority is LOW, MEDIUM or HIGH | TC-005 valid, TC-006 invalid | Pass | |
+| BR-3 | Status follows the allowed flow, otherwise 409 | TC-007 path, TC-008 skipped step | Pass | |
+| BR-4 | Only project members can be assigned (422) | TC-009 | Pass | |
+| BR-5 | Only project members can see or change tasks (403) | TC-010 GET, TC-011 PUT, TC-012 DELETE | Fail | TC-012 open bug |
+| BR-6 | Requests need a valid token (401) | TC-013 | Not run | Planned |
+
+:::info[Illustrative data]
+Test case IDs and results are invented to show the format. They are not a record of real test runs.
+:::
+
+Read it by column. An empty "Test case" cell is a coverage gap. A "Fail" or "Not run" cell needs an owner.

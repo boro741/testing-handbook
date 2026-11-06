@@ -1,0 +1,95 @@
+---
+title: "Project 1: requirements and risk"
+sidebar_position: 97.8
+description: "Capstone step 1: turn a one-page user story into six testable requirements, rank the risks and choose the three to test first."
+part: 97
+summary: "Write six testable requirements from a user story for TaskFlow, build a risk table with likelihood and impact, and pick the top three risks to test first."
+tags: [practice, capstone, requirements, risk]
+reading_time: 6
+related: ["/practice/project-overview", "/practice/project-2-design-tests", "/start-here/taskflow-reference"]
+---
+
+<TLDR>
+Start from the user story, not from the screen. Write six requirements that a tester can check with a pass or a fail,
+then rank the risks so that you test the most damaging ones first. A model answer is at the end of the page.
+</TLDR>
+
+## What and why
+
+A requirement says what the product must do. It is testable when you can write a test that passes or fails for it
+without guessing. "The app should be easy to use" is not testable. "A valid create request returns 201" is.
+
+A risk is something that could go wrong and hurt users. Testers rank risks with two questions. How likely is it? How much
+harm would it do? Score each answer as low = 1, medium = 2 or high = 3, then multiply the two. Rank by the score. If two
+risks tie, ask which failure the team would find last. Test that one early, because it is the hardest to spot later.
+
+Your rules come from the TaskFlow reference. Read its Business rules and Core API tables before you start, and cite them
+in your work. If a rule you need is missing from the reference, say so. Do not invent one.
+
+## The user story
+
+> As a project member I can create a task with a title of 1 to 100 characters and a priority, so my team sees what to do.
+
+In TaskFlow, a task is created with `POST /api/tasks`. The caller sends a bearer token from `POST /api/auth/login`.
+The story is short on purpose. Your job is to find the rules hidden inside it, such as who may create a task and who
+may see it afterwards.
+
+## Your work
+
+**Task 1: write six requirements.** Write each one as "Given [a condition], when [an action], then [an expected
+result]." Cover the main action in the story, its two rules and the access rules. Give a source for each requirement:
+the story, the reference or the app code.
+
+**Task 2: build a risk table.** List at least six risks. For each one, give a likelihood (low, medium or high), an impact
+(low, medium or high) and one sentence that explains your rating. Include at least one risk that is not about the form
+fields, such as who can reach whose data.
+
+**Task 3: choose three.** Pick the top three risks to test first. For each, say why it ranks above the others.
+
+Hint: a field's error message is rarely the biggest risk. Think about who can reach the data, and what the team relies
+on when it reads the board.
+
+## Common mistakes
+
+- Writing "returns an error" as the expected result. Name the status code, and say whether anything was saved.
+- Rating every risk as high. A risk table that is all high does not help you choose.
+- Ranking by how interesting a test is, not by how much harm a failure does.
+
+## Model answer
+
+<details>
+<summary>Show the answer</summary>
+
+**Six requirements**
+
+- **R1, create a task:** Given a project member with a valid token, when they post a valid title and priority for a
+  project they belong to, then the API returns 201 and the status is TODO. Source: the story and the Business rules.
+- **R2, title length:** Given a valid token, when the title has 0 or 101 characters, then the API returns 422 and no task
+  is saved. A title of 1 or 100 characters returns 201. Source: the Title rule.
+- **R3, priority:** Given a valid token, when the priority is not LOW, MEDIUM or HIGH (for example `low`), then the API
+  returns 422 and no task is saved. Source: the Priority rule.
+- **R4, membership:** Given a user who is not a member of the project, when they create a task there, then the API returns
+  403. Source: the Access rule.
+- **R5, team visibility:** Given a task in a project, when a member reads it or lists the project's tasks, then the task
+  appears. A non-member gets 403. Source: the story and the Access rule.
+- **R6, authentication:** Given no token or an invalid token, when a client posts a task, then the API returns 401.
+  Source: the app code. The reference does not state this rule, so confirm it with the team.
+
+**Risk table** (judgements, not measurements)
+
+| Risk | Likelihood | Impact |
+|---|---|---|
+| A non-member reads or changes another project's tasks | Medium | High |
+| The title limit is not enforced | Medium | High |
+| A priority outside the three values is saved | Medium | Medium |
+| Tasks move through states the flow forbids | Medium | High |
+| Login works with a wrong password | Low | High |
+| The API is slow when a project has many tasks | Medium | Medium |
+
+**Top three to test first**
+
+1. **Access on every task route.** High impact, and one gap exposes several routes.
+2. **Title and priority limits.** They are the story's core rule and cheap to test at the API.
+3. **The status flow.** High impact, because the status is what the team reports as done.
+
+</details>

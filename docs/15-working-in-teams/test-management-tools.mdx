@@ -1,0 +1,86 @@
+---
+title: Test management tools
+sidebar_position: 15.4
+description: Compare Jira, Xray, TestRail and Zephyr for test cases, test runs, traceability and reporting, and pick one by team need.
+part: 15
+summary: Test management tools store test cases, record runs and link them to requirements and defects. Pick one by where your team already works and what it must report.
+tags: [test-management, jira, xray, testrail, zephyr, traceability]
+reading_time: 7
+related: ["/planning-strategy/writing-test-cases", "/working-in-teams/testing-in-agile-teams", "/templates/traceability-matrix"]
+---
+
+<TLDR>
+A test management tool stores your test cases, records each run and shows which requirements are covered. Jira is the issue tracker most teams already use. Xray and Zephyr add test management inside Jira. TestRail is a separate tool that connects to Jira. Choose by where your team works, how much traceability you need, and who will maintain the data.
+</TLDR>
+
+## What and why
+
+A spreadsheet works for ten test cases. It stops working when you need to answer "which tests cover this rule?", "what failed in the last release?" or "which defects came from this requirement?" A test management tool keeps test cases, runs and results in one place, and links them to the work around them.
+
+Three terms help here:
+
+- **Requirement**: a rule or user story that says what the product must do.
+- **Test run** (or execution): one pass through a set of test cases, with a result for each.
+- **Traceability**: the links from a requirement to its tests, runs and defects. See [Traceability matrix](/templates/traceability-matrix).
+
+Test management tools do not replace good test design. They only store and report what you decide to test. For how to write a test case, see [Writing test cases and traceability](/planning-strategy/writing-test-cases).
+
+## The four tools
+
+**[Jira](https://www.atlassian.com/software/jira)** is Atlassian's work tracker. Teams use it for stories, bugs and sprints. The Jira product page (as of 2026-11-06) describes planning and tracking work, but not test management. Test cases are added through apps, so Jira alone does not give you test plans or test runs.
+
+**[Xray](https://www.getxray.app/)** is a test management app that runs inside Jira. The Xray site (as of 2026-11-06) says it helps teams write manual and automated tests, spot coverage gaps and report on them inside Jira. Requirements in Jira can be linked to tests. Test Sets group tests and Test Executions record runs. It connects to CI tools such as Jenkins, GitHub and GitLab.
+
+**[TestRail](https://www.testrail.com/)** is a standalone test management platform. It is not built into Jira. The TestRail site (as of 2026-11-06) describes test cases, plans and runs, requirement-to-test traceability and customisable dashboards. It has a two-way Jira issue integration, so a defect raised in TestRail appears in Jira and its status flows back.
+
+**Zephyr** (from SmartBear) is a test management app that also runs inside Jira. The Zephyr product page (as of 2026-11-06) lists three tiers, Essential, Standard and Advanced. It describes linking test cases to user stories in Jira, traceability from requirement to execution result, and over 70 cross-project reports. The tier names and features may change, so check the vendor page before you buy.
+
+## Comparison
+
+| Tool | Where it lives | Requirement link | Defect link | Reporting | Fits best when |
+|---|---|---|---|---|---|
+| Jira | Jira itself | Stories and issues | Bugs are issues | Jira filters and dashboards | Your team tracks everything in Jira and adds a test app |
+| Xray | Inside Jira | Jira issues linked to tests | Jira issues | Coverage and execution reports in Jira | You want tests and bugs in one Jira project |
+| TestRail | Separate web app | Requirements linked to test cases | Two-way Jira integration | Dashboards, traceability, cross-project reports | Tests are large and reused across projects, or you want a separate tool |
+| Zephyr | Inside Jira | User stories and requirements | Defects tracked in Jira | 70+ reports and gadgets in Jira | You want a Jira-native tool with many reports |
+
+Pricing: check the vendor page for each tool. The licence terms and tiers change, and we did not record prices in this handbook.
+
+## Choose by
+
+| If your situation is... | Consider |
+|---|---|
+| Everything lives in Jira and the team is small | Xray or Zephyr, to keep tests next to stories |
+| You need one test repository shared by several Jira projects | Xray or TestRail, and check how assets are shared |
+| Testers work outside Jira or in more than one tracker | TestRail |
+| You run most checks from CI and need results on each build | Any tool with an API or CI plug-in, then test the link yourself |
+| You have no budget for a tool yet | A structured spreadsheet with the same columns, then move later |
+
+## Before you choose
+
+Run a two-week trial on a real feature, not a demo project. Check these points:
+
+- Can a tester create a test case, run it and link a defect in under five minutes?
+- Does a requirement show its tests and their last result on one screen?
+- Can you export the data if you leave the tool?
+- Who will keep the links up to date? Traceability fails when nobody owns it.
+
+## Do this
+
+- Pick the tool after you know the questions you need answered. Write them down first.
+- Keep one ID scheme for requirements and tests across tools, such as `BR-1` and `TC-TASK-004`.
+- Link tests to requirements at creation time, not in a clean-up week before release.
+- Review the reports with the team every sprint. A report nobody reads is wasted effort.
+
+## Avoid this
+
+- Buying a tool for a process you have not agreed on.
+- Copying a whole spreadsheet into a tool with no mapping of fields.
+- Treating a green dashboard as proof of quality. It only shows the checks you wrote.
+- Adding a second tool when the first one already does the job.
+
+## Further reading
+
+- [Testing in agile teams](/working-in-teams/testing-in-agile-teams) covers how test work fits into sprints.
+- [Test estimation in practice](/working-in-teams/test-estimation-in-practice) helps size the test work that goes into these tools.
+- [Writing test cases and traceability](/planning-strategy/writing-test-cases) explains what each stored test case should contain.

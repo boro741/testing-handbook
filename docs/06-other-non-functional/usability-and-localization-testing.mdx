@@ -1,0 +1,85 @@
+---
+title: Usability and localization testing
+sidebar_position: 37.5
+description: How to test whether people can use a product, and whether it works across languages and regions.
+part: 6
+summary: Task-based usability sessions, heuristics, and internationalization checks with TaskFlow examples.
+tags: [usability, localization, i18n, non-functional]
+reading_time: 8
+related: ["/other-non-functional/accessibility-testing", "/fundamentals/test-levels-and-types", "/start-here/taskflow-reference"]
+---
+
+<TLDR>
+Usability testing asks "can real people finish their task easily?" Localization testing asks "does the product still work and read well in another language or region?" Both find problems that functional tests pass over.
+</TLDR>
+
+## What and why
+
+A feature can pass every functional test and still confuse people. A product can work in English and break on a German label or an Arabic title. These tests catch that.
+
+**Usability testing** watches people use the product. **Internationalization (i18n)** is building the product so it can support many languages. **Localization (l10n)** is adapting it for one language and region.
+
+## How it works
+
+**Task-based sessions.** Give 5 to 8 representative users a realistic goal, not instructions. Example: "Create a high-priority task in the Demo project and give it to Bob." Stay quiet and watch. Note where they hesitate, misclick or give up. Record time, success or failure, and quotes. Repeat after each fix.
+
+**Heuristic review.** An expert walks through the UI with a checklist. Nielsen's well-known heuristics include visibility of system status, error prevention and clear error messages. For TaskFlow: does the user see why a move from `TODO` to `DONE` was refused (409)?
+
+**Localization checks:**
+
+| Area | What to check |
+|---|---|
+| Text expansion | Translated text is often longer. Check that buttons and columns do not clip or overlap |
+| Dates, times, numbers | `06/11/2026` is 6 November in many countries and 11 June in the US. Decimal commas, currency and time zones differ |
+| Right-to-left (RTL) | Arabic and Hebrew read right to left. Layout, icons and punctuation should mirror |
+| Character sets | Accents, non-Latin scripts and emoji must be stored, shown and searched without corruption |
+| Sorting and case | Alphabetical order differs by language |
+
+## When to use it (and when not to)
+
+| Use it when | Skip it when |
+|---|---|
+| A new flow or a redesign ships | The change is purely internal, with no user-visible effect |
+| You plan to enter a new market or language | You only serve one fixed locale (still check names with accents) |
+
+Automated tests cannot judge "is this clear?". Pair this with [accessibility testing](/other-non-functional/accessibility-testing).
+
+## TaskFlow example
+
+Checks run against the local app on 2026-11-06 (`POST /api/tasks`). The title rule is 1 to 100 characters.
+
+| Title | Result |
+|---|---|
+| 100 × `é` | 201 Created |
+| 101 × `é` | 422 |
+| 100 × 😀 | 201 Created |
+| 101 × 😀 | 422 |
+| 100 × `é` written as `e` + combining accent | 422 |
+| `مرحبا 😀 café` | 201, returned unchanged |
+
+So TaskFlow counts characters (Unicode code points), not bytes. An emoji that takes 4 bytes still counts as 1. One finding to discuss: a letter typed as `e` plus a combining accent counts as 2, so 100 visible letters count as 200 and are refused. Decide whether the rule means code points or what the user sees, then test that boundary.
+
+```python
+@pytest.mark.parametrize("title, expected", [("é" * 100, 201), ("😀" * 100, 201), ("😀" * 101, 422)])
+def test_title_counts_characters(client, title, expected):
+    ...  # same pattern as the title boundary test
+```
+
+The API only stores text. Whether the UI mirrors for RTL, or clips a long German label, needs a manual or browser test. That was not run for this page.
+
+## Do this
+
+- Write usability tasks as goals, with a pass condition ("task created and assigned, no help").
+- Test names, titles and search with accents, emoji, RTL text and very long words.
+- Keep text out of code so translators can change it, and leave room for longer strings. (Recommendation)
+- Test pseudo-localization: replace text with accented, longer fake text to spot clipping early.
+
+## Avoid this
+
+- Asking friends "do you like it?" instead of watching a task.
+- Testing translations only by machine.
+- Assuming a date format. Use an unambiguous one in tests, such as `2026-11-06`.
+
+## Further reading
+
+See [Test levels and types](/fundamentals/test-levels-and-types) for where non-functional tests fit.

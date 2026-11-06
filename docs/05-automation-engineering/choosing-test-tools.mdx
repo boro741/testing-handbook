@@ -1,0 +1,76 @@
+---
+title: Choosing UI and API test tools
+sidebar_position: 27.5
+description: A checked comparison of Selenium, Cypress and Playwright for UI tests, and Postman, REST Assured and pytest with httpx for API tests.
+part: 5
+summary: Compare six test tools on language, browsers or protocols, parallelism, CI fit, licence and latest release, with a decision table.
+tags: [tools, selenium, cypress, playwright, postman, rest-assured, httpx, comparison]
+reading_time: 7
+related: ["/testing-by-layer/ui-testing", "/testing-by-layer/api-testing", "/testing-by-layer/api-testing-with-postman-cli", "/load-testing-tools/choosing-a-tool"]
+---
+
+<TLDR>
+For UI tests, the real choice is between Selenium, Cypress and Playwright. For API tests, it is between Postman, REST Assured and pytest with httpx. Pick by the language your team writes, where tests run, and what you are allowed to pay for. Facts below were read from official pages and GitHub on 2026-11-06. "Not verified" means we could not confirm it.
+</TLDR>
+
+## What and why
+
+This page is the UI and API counterpart of [Choosing a load testing tool](/load-testing-tools/choosing-a-tool). A tool you cannot maintain is worse than a slightly weaker one your team can read. All facts are "as of 2026-11-06". Latest releases change often.
+
+## How it works
+
+**UI tools** (browser automation):
+
+| Tool | Language | Browsers (checked) | Parallelism | CI fit | Licence | Latest release |
+|---|---|---|---|---|---|---|
+| **Selenium** | Java, Python, C#, Ruby, JavaScript, Kotlin | Chrome, Edge, Firefox, Safari (docs also list Internet Explorer) | Selenium Grid runs tests on several machines | Not verified | Apache-2.0 | 4.52.0, 2026-10-29 |
+| **Cypress** | JavaScript and TypeScript | Firefox and Chrome-family browsers, including Edge | Parallel runs across specs are a feature of Cypress Cloud, a paid service | Runs in CI. Cloud adds GitHub, GitLab and Bitbucket integrations | MIT | v16.2.1, 2026-10-28 |
+| **Playwright** | Node.js, Python, Java, .NET | Chromium, WebKit, Firefox | With pytest: `pytest-xdist`, for example `--numprocesses auto` | Docs say tests run locally or on CI. The CI guide was not read | Apache-2.0 | v1.65.0, 2026-11-05 |
+
+**API tools:**
+
+| Tool | Language | Protocols (checked) | Parallelism | CI fit | Licence | Latest release |
+|---|---|---|---|---|---|---|
+| **Postman CLI** | Test scripts in JavaScript (`pm.test`) | HTTP. gRPC and GraphQL only unary, on paid plans (Postman docs) | Not verified | Command line run. Local runs worked without login here | Not verified | 1.73.0 installed here. Release date not verified |
+| **REST Assured** | Java. Scala through a support module | HTTP and REST (per its site) | Not verified | Not verified | Apache-2.0 | 6.3.0 on Maven Central, 2026-10-23 |
+| **pytest + httpx** | Python | HTTP/1.1 and HTTP/2 (HTTP/2 needs an extra), sync and async | `pytest-xdist` (not checked for this combination) | Plain command line | pytest MIT, httpx BSD-3-Clause | pytest 9.2.0, 2026-10-27. httpx 0.28.1, 2024-12-06 |
+
+:::info[What these facts are]
+Licences and releases come from the GitHub API, plus Maven Central for REST Assured. Language, browser and parallelism notes come from each tool's own documentation. Adoption claims are not included, because we did not verify any. Cypress and Selenium were checked only on the pages listed in the sources page.
+:::
+
+## When to use it (and when not to)
+
+Decision table by team situation:
+
+| Your team | Consider | Why |
+|---|---|---|
+| Python, already on pytest | Playwright with `pytest-playwright`, and pytest + httpx | One runner and one language. TaskFlow's real tests do this |
+| Java shop with JUnit habits | Selenium for UI, REST Assured for API | Same language as the application |
+| Front-end team in JavaScript or TypeScript | Cypress or Playwright (Node.js) | Tests sit next to front-end code. Check whether paid Cypress Cloud parallelism fits your budget |
+| Must test Safari through WebDriver, or needs many languages | Selenium | Widest language list in the table |
+| Mixed team where testers do not code | Postman collections | Requests are readable. See [API testing with the Postman CLI](/testing-by-layer/api-testing-with-postman-cli) |
+| Need HTTP/2 or async API clients | httpx | Both are listed in its docs |
+
+## TaskFlow example
+
+TaskFlow uses Playwright (Python) in `examples/taskflow/ui-tests/`, pytest + httpx in `examples/taskflow/tests/`, and a Postman collection in `examples/taskflow/postman/`. The other three tools were **not run** against TaskFlow. Their rows come from documentation only.
+
+**Recommendation:** for a Python team, start with pytest + httpx for API and Playwright for UI. This is an opinion for TaskFlow's setup, not a standard. A Java or JavaScript team should pick the tool in its own language, then try one small test before committing.
+
+## Do this
+
+- Write the same two tests in each candidate, and compare the effort.
+- Check the licence with legal, and the latest release in the changelog, before you commit.
+- Keep UI tests few and API tests many, whichever tools you pick (see [UI testing](/testing-by-layer/ui-testing)).
+
+## Avoid this
+
+- Choosing by popularity or star count.
+- Reading "not verified" as "not supported".
+- Running two UI frameworks in one team without a reason.
+
+## Further reading
+
+- [Playwright for Python: test runners](https://playwright.dev/python/docs/test-runners), opened 2026-11-06.
+- [Selenium Grid documentation](https://www.selenium.dev/documentation/grid/), opened 2026-11-06.

@@ -1,0 +1,26 @@
+$kind: http-request
+id: f32b65efed86dc677d359fd8
+name: 2 Create task
+method: POST
+url: '{{baseUrl}}/api/tasks'
+body:
+  type: json
+  content: '{"title":"Postman task","priority":"MEDIUM","project_id":1}'
+headers:
+  - key: Content-Type
+    value: application/json
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{token}}'
+scripts:
+  - type: afterResponse
+    code: |
+      pm.test("create returns 201", () => pm.response.to.have.status(201));
+      pm.test("task starts as TODO", () => {
+        const body = pm.response.json();
+        pm.expect(body.status).to.eql("TODO");
+        pm.expect(body.title).to.eql("Postman task");
+      });
+    language: text/javascript

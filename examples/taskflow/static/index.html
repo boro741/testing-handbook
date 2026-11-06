@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TaskFlow (demo UI)</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem; }
+    fieldset { margin-bottom: 1rem; }
+    input, select, button { font-size: 1rem; margin: 0.25rem 0; }
+    pre { background: #f4f4f4; padding: 0.75rem; overflow: auto; }
+  </style>
+</head>
+<body>
+  <h1>TaskFlow <small>(demo UI)</small></h1>
+  <p>Demo users: <code>alice / alice-pass</code>, <code>bob / bob-pass</code>. Project id is <code>1</code>.</p>
+
+  <fieldset id="login">
+    <legend>1. Log in</legend>
+    <label>Username <input id="username" value="alice" data-testid="username"></label><br>
+    <label>Password <input id="password" type="password" value="alice-pass" data-testid="password"></label><br>
+    <button id="login-btn" data-testid="login">Log in</button>
+    <span id="who" data-testid="who"></span>
+  </fieldset>
+
+  <fieldset>
+    <legend>2. Create a task</legend>
+    <label>Title <input id="title" maxlength="100" data-testid="task-title"></label><br>
+    <label>Priority
+      <select id="priority" data-testid="task-priority">
+        <option>LOW</option><option selected>MEDIUM</option><option>HIGH</option>
+      </select>
+    </label><br>
+    <button id="create-btn" data-testid="create-task">Create task</button>
+  </fieldset>
+
+  <fieldset>
+    <legend>3. Tasks in project 1</legend>
+    <button id="list-btn" data-testid="list-tasks">Refresh list</button>
+    <ul id="tasks" data-testid="task-list"></ul>
+  </fieldset>
+
+  <pre id="log" data-testid="log"></pre>
+
+<script>
+  let token = null;
+  const log = (x) => document.getElementById('log').textContent = JSON.stringify(x, null, 2);
+  const headers = () => ({'Content-Type': 'application/json', ...(token ? {Authorization: 'Bearer ' + token} : {})});
+
+  document.getElementById('login-btn').onclick = async () => {
+    const r = await fetch('/api/auth/login', {method: 'POST', headers: headers(), body: JSON.stringify({
+      username: document.getElementById('username').value,
+      password: document.getElementById('password').value})});
+    const body = await r.json();
+    if (r.ok) { token = body.token; document.getElementById('who').textContent = 'Logged in'; }
+    log({status: r.status, body});
+  };
+
+  document.getElementById('create-btn').onclick = async () => {
+    const r = await fetch('/api/tasks', {method: 'POST', headers: headers(), body: JSON.stringify({
+      title: document.getElementById('title').value,
+      priority: document.getElementById('priority').value,
+      project_id: 1})});
+    log({status: r.status, body: await r.json()});
+  };
+
+  document.getElementById('list-btn').onclick = async () => {
+    const r = await fetch('/api/tasks?project_id=1', {headers: headers()});
+    const body = await r.json();
+    const ul = document.getElementById('tasks');
+    ul.innerHTML = '';
+    if (Array.isArray(body)) body.forEach(t => {
+      const li = document.createElement('li');
+      li.textContent = `#${t.id} ${t.title} [${t.priority}] ${t.status}`;
+      li.setAttribute('data-testid', 'task-item');
+      ul.appendChild(li);
+    });
+    log({status: r.status, body});
+  };
+</script>
+</body>
+</html>

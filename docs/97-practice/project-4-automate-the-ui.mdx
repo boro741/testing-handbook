@@ -1,0 +1,91 @@
+---
+title: "Project 4: automate the UI"
+sidebar_position: 97.11
+description: "Write Playwright tests with pytest-playwright for the TaskFlow demo page: log in, create a task, list tasks and check the title limit."
+part: 97
+summary: "Write four browser tests for the demo page, run them against a local server, then compare them with the reference tests."
+tags: [practice, project, playwright, pytest-playwright, ui-testing]
+reading_time: 9
+related: ["/practice/project-overview", "/practice/project-3-automate-the-api", "/practice/project-5-performance-and-capacity", "/practice/exercises-automation-and-layers"]
+---
+
+<TLDR>
+You write four browser tests for the TaskFlow demo page. The tests cover logging in, creating a task, listing tasks and the 100-character title limit. You run them with pytest-playwright against a local server. Then you compare your tests with the reference file in the repo.
+</TLDR>
+
+## What and why
+
+A UI test drives a real browser. It clicks buttons, types into fields and checks what appears on the page. It is slower than an API test, so keep UI tests for flows that only the page can show. The API tests in the previous project already check the rules. Here you check that the page sends the right requests and shows the results.
+
+The demo page is one static HTML file, `examples/taskflow/static/index.html`. It has three steps: log in, create a task and list tasks. Every control has a `data-testid` attribute. Use those attributes as your locators. They do not change when the wording or layout changes. A `log` box shows the JSON status and body of the last request, so most checks read that box.
+
+## Before you start
+
+You need Python 3.11 or newer, and the core test packages from `examples/taskflow/requirements-dev.txt`. Browser tests need two more things, which are kept out of the core file because they are large: the packages in `requirements-extra.txt`, and a browser. Install both once:
+
+```bash
+cd examples/taskflow
+pip install -r requirements-extra.txt
+python -m playwright install chromium
+```
+
+Start the app in one terminal. Keep it running while you test:
+
+```bash
+cd examples/taskflow
+uvicorn app.main:app --port 8000
+```
+
+Open http://localhost:8000 to see the page. Without `DATABASE_URL`, the app writes `taskflow.db` into `examples/taskflow`. That file is ignored by git. To keep it somewhere else, put `DATABASE_URL=sqlite:////tmp/taskflow-ui.db` in front of the `uvicorn` command.
+
+## Steps
+
+**Step 1: Write the login test.** Make a new file, `ui-tests/test_my_ui.py`. Open the page, click the login button, and check that the `who` text says "Logged in". Then check that the `log` box shows a 200 status.
+
+**Step 2: Write the create-task test.** Use a unique title, for example one with `uuid` in it. Fill the title field, click create, and check that the log shows 201 and your title. A unique title keeps the test from matching an old task.
+
+**Step 3: Write the list-tasks test.** Create a task first. Click the refresh button. Check that exactly one list item with your title appears. Use `filter(has_text=...)` on the `task-item` locator.
+
+**Step 4: Write the title-limit test.** The title input has `maxlength="100"`, so the browser will not send 101 characters. To test the API's rule, remove that attribute in the test with `evaluate`, then send 101 characters. Check for a 422 status and the message about 100 characters. Also write a test that 100 characters gets a 201.
+
+**Step 5: Run the tests.** From `examples/taskflow`, run:
+
+```bash
+pytest ui-tests --base-url http://localhost:8000
+```
+
+Add `--headed` to watch the browser. Each `expect(...)` call waits for the text to appear, so do not add `time.sleep`.
+
+## Compare with the reference
+
+The repo has a reference file: `examples/taskflow/ui-tests/test_taskflow_ui.py`. Read it after you have your own tests. Run against a local server, all six tests in that file pass. The file also covers the 1-character title. Here is the title-limit part:
+
+```python
+def create_task(page: Page, title: str) -> None:
+    page.get_by_test_id("task-title").fill(title)
+    page.get_by_test_id("create-task").click()
+
+
+def test_title_101_chars_shows_api_error(logged_in: Page):
+    # The input has maxlength=100, so remove it to let the API see 101 characters.
+    logged_in.get_by_test_id("task-title").evaluate("el => el.removeAttribute('maxlength')")
+    create_task(logged_in, "a" * 101)
+    log = logged_in.get_by_test_id("log")
+    expect(log).to_contain_text('"status": 422')
+    expect(log).to_contain_text("at most 100 characters")
+```
+
+Check your tests against the reference. Ask yourself whether a test would still fail if the page broke. A test that only checks that the page loaded does not prove much.
+
+## Avoid this
+
+- **Testing the browser's limit as if it were the API's limit.** The `maxlength` attribute stops typing at 100 characters. That is a page rule. The API rule is separate, so test it both ways if you need to.
+- **Sleeping for a fixed time.** Use `expect` with a text or count check. It waits for the page to catch up.
+- **Using CSS selectors that depend on layout.** Use the `data-testid` attributes.
+- **Sharing one task title across tests.** Use a unique title per test so the tests can run in any order.
+
+## Done when
+
+- Your `ui-tests/test_my_ui.py` has the four checks above.
+- `pytest ui-tests --base-url http://localhost:8000` passes with the server running.
+- You can say what each test would catch if the page broke.

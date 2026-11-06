@@ -1,0 +1,122 @@
+---
+title: Communicating quality and risk
+sidebar_position: 15.5
+description: How to report quality to a manager, product owner or release board, using a one-page summary, trends and an honest "not tested yet".
+part: 15
+summary: Good quality reports say what passed, what is not tested, what is risky and what you recommend. They separate test results from risks and say no clearly when needed.
+tags: [reporting, risk, release, communication, stakeholders]
+reading_time: 6
+related: ["/working-in-teams/test-management-tools", "/working-in-teams/bug-triage-meetings", "/templates/test-summary-report"]
+---
+
+<TLDR>
+Decision-makers need three things: what is ready, what is risky, and what you recommend. Keep a one-page release summary, and say "not tested yet" plainly instead of hiding it. A test result is a fact about a check. A risk is a judgement about what could go wrong for users. Show trends, not single numbers, and say no with a reason and a way forward.
+</TLDR>
+
+## What and why
+
+A test report is only useful if the person reading it can act on it. A manager does not want forty test case IDs. They want to know whether the release is safe, what could go wrong and what they must decide. Quality reporting is the work of turning test data into that answer.
+
+Many testers report counts: "180 passed, 12 failed". Counts are accurate but they do not say much. A failing test on a rarely used export screen matters less than a passing test on login. The report must say which results matter.
+
+## Result versus risk
+
+These two words are often mixed up.
+
+| Term | What it is | Example |
+|---|---|---|
+| Test result | A fact about one check: passed, failed, blocked or not run | "TC-TASK-004 failed: a 101-character title was accepted" |
+| Risk | A judgement about what could go wrong for users or the business, and how likely and how bad it is | "Long titles may break the mobile list view, which affects every user who types a long title" |
+
+A result feeds a risk. One failed test does not always mean a high risk. A failed test on a path that nobody uses may be a low risk. A missing test on a payment path may be a high risk even with no failure at all. Report both, and label which is which.
+
+## The one-page release summary
+
+Keep one page per release candidate. Use the same layout every time, so readers learn where to look.
+
+| Section | What goes in it |
+|---|---|
+| Recommendation | Go, go with known risks, or no-go, in one line |
+| Scope | What changed and what was tested |
+| Results | Pass, fail and blocked counts for the agreed scope, with a link to the run |
+| Open defects | Count by severity, plus any blocker by ID |
+| Not tested yet | Areas with no test, or only a partial one, and why |
+| Risks | Top three risks, each with impact, likelihood and an owner |
+| Decision needed | What you need from the reader, and by when |
+
+Keep it to one page. If a reader needs more, link to the test summary report, not a longer summary.
+
+## How to say "not tested yet"
+
+Saying a feature is not tested feels exposing. Hiding it is worse. When it is found after release, trust drops.
+
+Use plain words and give a reason and a date:
+
+- "Not tested: the CSV export. The test data is not ready. We expect it on Thursday."
+- "Partly tested: assignment works for members. We have not tested guests, because guests do not exist in the build yet."
+
+Do not write "tested" for a feature you only read about. Do not write "fine" when you mean "no failures found in the checks we ran".
+
+## How to show a trend
+
+One number on one day tells little. A trend over several builds tells you whether quality is moving. Show the same measure over at least four builds, and always say what changed between them.
+
+:::info[Illustrative data]
+The numbers below are made up for this example. They are not measurements of TaskFlow.
+:::
+
+| Build | Tests run | Failed | Open high-severity defects |
+|---|---|---|---|
+| 2026.10.1 | 180 | 14 | 4 |
+| 2026.10.2 | 186 | 9 | 3 |
+| 2026.10.3 | 190 | 4 | 1 |
+| 2026.10.4 | 190 | 2 | 0 |
+
+A reader can see the failures and open defects falling. Add one sentence: "The drop came from the status-flow fixes in builds .2 and .3." Without that sentence, the table is just numbers.
+
+## TaskFlow example: a release-board summary
+
+This example uses TaskFlow rules from the [TaskFlow reference](/start-here/taskflow-reference). The data is illustrative.
+
+:::info[Illustrative data]
+Scope: TaskFlow 2026.10.4, status flow and project membership changes.
+:::
+
+**Recommendation:** Go with one known risk. Do not ship until the assignment fix is confirmed.
+
+- **Results:** 190 of 190 checks in the agreed scope ran. 188 passed, 2 failed.
+- **Open defects:** 0 high severity. 3 medium, none blocking.
+- **Not tested yet:** Bulk status change. The API for it is not in this build.
+- **Top risk:** Assigning a non-member to a task might not be blocked. The rule says it must return 422. Impact high, likelihood low. Owner: backend lead. A check is planned for tomorrow.
+- **Decision needed:** Approve the release if the assignment check passes by 17:00.
+
+## Saying no to a release
+
+You can say no without blocking the team. Follow four steps:
+
+1. State the blocker in one sentence, using a result or a named risk.
+2. Give the evidence: the test ID, the run link or the defect ID.
+3. Say what would change your answer, such as "a passing run of TC-TASK-009".
+4. Offer an option: a smaller release, a feature flag, or a known-risk sign-off by the product owner.
+
+A no with evidence and a way forward is accepted more often than a vague "I am not comfortable".
+
+## Do this
+
+- Agree the release criteria before the test cycle starts, so the summary is not a debate afterwards.
+- Name an owner for every risk and every "not tested yet" item.
+- Send the summary before the meeting, and use the meeting for the decision.
+- Write the recommendation first. Put evidence below it.
+
+## Avoid this
+
+- Reporting only pass counts, without scope or the areas left out.
+- Turning a "not tested" into "passed" because the date is close.
+- Using red and green alone. Add words so the message survives a black-and-white print.
+- Making the report longer when the decision is short.
+
+## Further reading
+
+- [Test management tools](/working-in-teams/test-management-tools) explains where the numbers in your report come from.
+- [Bug triage meetings](/working-in-teams/bug-triage-meetings) covers how defects are ranked before they reach the release board.
+- [Test summary report](/templates/test-summary-report) is the longer document to link from the one-page summary.

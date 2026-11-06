@@ -1,0 +1,70 @@
+---
+title: Use case and scenario testing
+sidebar_position: 15
+description: Test a user goal from start to finish, using use cases and scenarios, with a TaskFlow assign-a-task example.
+part: 3
+summary: A use case describes a user goal. A scenario is one path through it. Test the main path and the alternate paths.
+tags: [test-design, use-case, scenario, techniques]
+reading_time: 6
+related: [/docs/test-design/decision-tables, /docs/test-design/exploratory-testing, /docs/test-design/state-transition-testing]
+---
+
+<TLDR>
+A use case describes what a user wants to do, and the steps the system takes. A scenario is one path through a use case: the main success path, or an alternate path such as an error. Testing scenarios checks that the whole job works, not only its parts.
+</TLDR>
+
+## What and why
+
+Rule-based tests check one thing at a time. Users do not work that way. They want to finish a job, such as assigning a task to a teammate.
+
+A **use case** describes the goal, who does it (the **actor**), what must be true before (the **precondition**), the steps, and what is true after (the **postcondition**).
+
+A **scenario** is one route through the use case. Each scenario is a test. Start with the main success path, then add the alternate paths and the error paths.
+
+## How it works
+
+| Part of a use case | Example for "assign a task" |
+|---|---|
+| Actor | A logged-in project member |
+| Precondition | The task exists in a project the actor belongs to |
+| Main path | The actor chooses a member and assigns the task |
+| Alternate path | The chosen user is not a member, so the assignment is refused |
+| Error path | The actor is not logged in |
+| Postcondition | The task shows the assignee, or nothing has changed |
+
+## When to use it (and when not to)
+
+| Use it when | Skip it when |
+|---|---|
+| A feature is a job with several steps | You are testing one input and one result (use boundary values) |
+| You want to check the flow between services | The rule is a table of conditions (use decision tables) |
+| Stakeholders think in user goals | You need a quick check on the basics (use smoke tests) |
+
+## TaskFlow example
+
+**Use case:** Assign a task to a teammate.
+
+| Scenario | Steps | Expected result |
+|---|---|---|
+| 1. Main path | Log in as `alice`, create a task in the Demo project, assign it to `bob` | 200, `assignee_id` is `bob`'s id |
+| 2. Assignee not a member | Assign a task to a user who is not in the project | 422 |
+| 3. Caller not a member | Log in as a user outside the project and assign a task | 403 |
+| 4. Not logged in | Call the assign endpoint with no token | 401 |
+
+Scenario 1 uses the existing `test_assign_a_member_works` test. Scenarios 2 and 4 are covered by the decision table in [Decision table testing](/test-design/decision-tables). Scenario 3 is the gap noted there.
+
+## Do this
+
+- Write the main path first. Get it passing end to end.
+- Add one scenario for each alternate or error path that a user can reach.
+- Use real data from the reference page, such as the Demo project and demo users.
+- Keep each scenario to one goal, so a failure points to one thing.
+
+## Avoid this
+
+- Writing one long scenario that tests five goals. A failure then tells you little.
+- Skipping the error paths because they are rare. Users reach them more often than you think.
+
+## Further reading
+
+For a free-form way to find scenarios you did not write down, see [Exploratory testing](/test-design/exploratory-testing).

@@ -1,0 +1,123 @@
+---
+title: Data and ETL testing
+sidebar_position: 16.1
+description: How to test an ETL pipeline by checking row counts, nulls, duplicates, schema, value ranges, reconciliation and freshness with pytest.
+part: 16
+summary: Data tests check the data a pipeline produces, not the code that produces it. Counts, nulls, duplicates and freshness catch most silent failures.
+tags: [data, etl, pytest, sqlite, data-quality]
+reading_time: 7
+related: ["/testing-by-layer/backend-and-database-testing", "/automation-engineering/test-data-management", "/testing-by-layer/api-testing"]
+---
+
+<TLDR>
+An ETL pipeline moves data from a source, cleans it, and loads it into a target such as a warehouse table. Data testing checks the result: are the right rows there, are the values sensible, and is the data recent. You write these checks as ordinary pytest tests against the loaded table.
+</TLDR>
+
+## What and why
+
+ETL stands for **extract, transform, load**:
+
+1. **Extract** reads data from somewhere, such as a CSV export, a database or an API.
+2. **Transform** cleans and reshapes it. Text is trimmed, types are parsed, bad rows are removed.
+3. **Load** writes the result into a target, such as a warehouse table, that people query for reports.
+
+Data bugs are often silent. The pipeline finishes with exit code 0, the report still renders, and the numbers are just wrong. A missing day of orders, a double-counted customer or a column that quietly became text does not crash anything. Data tests exist to catch these failures.
+
+Data tests check the output of a run. They do not care how the transform is written. That makes them a useful safety net when the code changes.
+
+## What to check
+
+| Check | Plain question it answers |
+|---|---|
+| Row counts | Did every source row end up loaded or rejected, with nothing lost? |
+| Nulls | Are required fields filled in? |
+| Duplicates | Is each key (such as `order_id`) unique? |
+| Schema | Does the table have the columns and types that consumers expect? |
+| Value ranges | Are amounts non-negative? Are statuses from the allowed list? |
+| Reconciliation | Do totals in the target match the control totals the pipeline reported? |
+| Freshness | Was the table loaded recently enough to be trusted? |
+
+Reconciliation is the check people skip most often. Count the source rows yourself, then check that loaded plus rejected equals the total. A total that is off by a few rows is still a bug.
+
+## How to write them as tests
+
+Each data check is a short query plus an assertion. Load the pipeline output once per test run, then query it. A pytest fixture with `scope="module"` does this well: the pipeline runs once, and every test reads the same result.
+
+The example below uses `pytest.approx` for totals. Floating-point sums can differ in the last digit, so an exact `==` is fragile. The example uses only the Python standard library (`csv`, `sqlite3`) plus pytest.
+
+## TaskFlow example
+
+TaskFlow has no data pipeline. As a comparison, imagine TaskFlow tasks exported nightly to a reporting table. Its checks would be: every task in the export is loaded or rejected, no task ID is blank or repeated, priorities are one of `LOW`, `MEDIUM` or `HIGH`, and the last load ran within a day. The [TaskFlow reference](/start-here/taskflow-reference) lists the real rules that a task must follow.
+
+The runnable example is in `examples/data-testing/`. It has a small pipeline (`pipeline.py`), a source file with deliberately bad rows (`orders.csv`), and 12 tests (`tests/test_pipeline.py`). The pipeline writes SQLite to a temp folder.
+
+Key parts of the fixture and two of the tests:
+
+```python
+@pytest.fixture(scope="module")
+def warehouse(tmp_path_factory):
+    db_path = tmp_path_factory.mktemp("warehouse") / "warehouse.db"
+    stats = run_pipeline(SOURCE, db_path)
+    con = sqlite3.connect(db_path)
+    yield stats, con
+    con.close()
+
+
+def test_row_counts_reconcile(warehouse):
+    stats, con = warehouse
+    (rows_in_db,) = con.execute("SELECT COUNT(*) FROM orders").fetchone()
+    assert rows_in_db == stats["loaded"]
+    # Every source row is either loaded or rejected for a counted reason.
+    assert count_source_rows() == stats["loaded"] + sum(stats["rejected"].values())
+
+
+def test_amount_total_matches_pipeline_control_total(warehouse):
+    stats, con = warehouse
+    (total,) = con.execute("SELECT SUM(amount) FROM orders").fetchone()
+    assert total == pytest.approx(stats["loaded_amount_total"])
+```
+
+The source file has 12 rows. The pipeline loads 6 and rejects 6: one blank ID, one duplicate, one negative amount, one non-numeric amount, one impossible date and one unknown status. The test `test_rejections_are_counted_by_reason` checks each count.
+
+Run it from the folder:
+
+```bash
+cd examples/data-testing
+python3 -m venv .venv && . .venv/bin/activate
+pip install pytest
+pytest -q
+```
+
+Output from a real run (pytest 9.2.0, Python 3.12):
+
+```text
+..........                                                               [100%]
+12 passed in 0.02s
+```
+
+:::info[Illustrative data]
+The 12 rows in `orders.csv` are made up to show each kind of bad row. They are not real orders.
+:::
+
+Two design choices make the tests useful. The SQLite table has no `PRIMARY KEY` or `NOT NULL` constraints, so the database cannot hide a problem for the tests to miss. And the freshness test checks when the load ran, not the age of the order dates. A second freshness test passes a time 48 hours later to the same `is_fresh` helper, to prove the check can fail. A check that can never fail tells you nothing. Test data is covered in more depth in [Test data management](/automation-engineering/test-data-management).
+
+## Do this
+
+- Count the source rows yourself, outside the pipeline, and reconcile against the target.
+- Log every rejected row with a reason. A count per reason makes a sudden jump easy to spot.
+- Check the schema, not just the values. A renamed column can break every downstream report.
+- Compare totals with a tolerance when they are floats.
+- Recommendation: run data tests right after each load, and fail the pipeline run when they fail.
+
+## Avoid this
+
+- Checking only that the pipeline finished without an error.
+- Relying on database constraints alone. A pipeline may load into a table that has none.
+- Testing with a clean sample file only. Include blanks, duplicates and bad types, as the example does.
+- Comparing float totals with exact equality.
+
+## Further reading
+
+- [pytest documentation](https://docs.pytest.org/en/stable/), including the `tmp_path_factory` and `approx` references (checked 2026-11-06).
+- [API testing](/testing-by-layer/api-testing) covers checking data through an API rather than a database table.
+- [Backend and database testing](/testing-by-layer/backend-and-database-testing) covers testing the database layer itself.

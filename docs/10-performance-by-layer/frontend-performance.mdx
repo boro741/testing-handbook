@@ -1,0 +1,88 @@
+---
+title: Frontend performance
+sidebar_position: 55
+description: Core Web Vitals (LCP, INP, CLS) and FCP, why HTTP-level load tests miss them, and the tools that measure them in a real browser.
+part: 10
+summary: Measure what the user sees in a real browser, using the Core Web Vitals thresholds.
+tags: [performance, frontend, core-web-vitals, lcp, inp, cls, browser]
+reading_time: 6
+related: ["/performance-fundamentals/performance-metrics", "/performance-by-layer/mobile-performance", "/testing-by-layer/ui-testing"]
+---
+
+<TLDR>
+Frontend performance is what a user sees and waits for in the browser. Google's Core Web Vitals are three measures with "good" thresholds: LCP (loading), INP (responsiveness) and CLS (layout stability). Load tools that send HTTP requests cannot measure them, so use a real browser.
+</TLDR>
+
+## What and why
+
+A page load is more than an API call. The browser downloads HTML, CSS, JavaScript and images, runs code, and paints the screen. A fast API can still give a slow page if the bundle is large or a layout jumps around.
+
+**Core Web Vitals** are three user-facing measures that web.dev defines. The thresholds below are the "good" values. They are judged at the 75th percentile of page loads, which means 75% of real visits should meet them.
+
+| Metric | What it measures | "Good" value |
+|---|---|---|
+| **LCP** (Largest Contentful Paint) | Loading: time until the largest visible element appears | 2.5 seconds or less |
+| **INP** (Interaction to Next Paint) | Responsiveness: delay between a click or key press and the next paint | 200 milliseconds or less |
+| **CLS** (Cumulative Layout Shift) | Stability: how much content moves while the page loads | 0.1 or less |
+
+**FCP** (First Contentful Paint) is the time until any content appears. It is not a Core Web Vital. It helps explain a slow LCP.
+
+## How it works
+
+Two kinds of test measure different things:
+
+| | HTTP-level load (Locust, k6) | Real-browser measurement |
+|---|---|---|
+| What it sends | API requests, at scale | A page in a browser, one user at a time |
+| Measures | API latency, throughput, errors | LCP, INP, CLS, FCP |
+| Misses | Rendering, JavaScript, images, layout | Behaviour under many users |
+
+Use both. Load-test the API for capacity. Measure the browser for the user's experience.
+
+Tools for browser measurement:
+
+- **Lighthouse CI** runs Lighthouse audits in CI and checks the results against thresholds you set. Its repository is licensed under Apache-2.0 (checked on GitHub, as of 2026-11-06).
+- **sitespeed.io** is a free, open-source tool. It measures LCP, INP and CLS out of the box, can run on a schedule, and produces HTML reports.
+- **WebPageTest** is a web performance testing tool. It is named here without a link because its site did not load in the automated check.
+
+Lab tests run in controlled conditions. Field data comes from real users. Use lab tests to catch regressions and field data to see the real picture.
+
+## When to use it (and when not to)
+
+| Use it when | Skip it when |
+|---|---|
+| The UI is a main part of the product | The service is API-only |
+| A release changes images, scripts or layout | A backend-only change with no UI effect |
+| You want to catch regressions in CI | You need API capacity. Use the API chapters instead |
+
+## TaskFlow example
+
+The local TaskFlow UI is served from `examples/taskflow/static/index.html` at `http://localhost:8000/`. It shows the task list, which calls `GET /api/tasks?project_id=1`.
+
+A concrete check:
+
+1. Open `/` in a real browser with a throttled network and a mid-range device profile.
+2. Measure LCP, INP and CLS. Record the 75th percentile across several loads.
+3. Load-test the API separately with Locust or k6.
+
+A slow API response can cause a slow LCP, because the task list waits for data. Only the browser can show that link. The API test cannot. This repository does not yet include a browser performance script for TaskFlow.
+
+## Do this
+
+- Measure in a real browser, with throttling that matches your users' devices.
+- Track the 75th percentile, and use field data when you have it.
+- Set a budget for each Core Web Vital and fail the build when it breaks.
+- Check INP with real interactions, such as opening a menu or submitting a form.
+- Watch the size of JavaScript and image files in each release.
+
+## Avoid this
+
+- Judging a page only by a lab score on a fast laptop with a warm cache.
+- Confusing FCP with LCP. A fast first paint can still have a slow main image.
+- Using HTTP load tools to claim anything about page rendering.
+
+## Further reading
+
+- [Web Vitals](https://web.dev/articles/vitals), web.dev. Thresholds checked on the page, as of 2026-11-06.
+- [Lighthouse CI](https://github.com/GoogleChrome/lighthouse-ci), GitHub. Apache-2.0 licence.
+- [sitespeed.io](https://www.sitespeed.io/). Measures all three Core Web Vitals.

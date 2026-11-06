@@ -1,0 +1,84 @@
+---
+title: Auto scaling
+sidebar_position: 68
+description: How ECS Service Auto Scaling target tracking adds and removes tasks, what the cooldown settings do, and how to test a policy before you trust it.
+part: 12
+summary: Target tracking keeps a metric near a target by changing the task count. Cooldowns stop it from flapping, and it only helps when tasks are the bottleneck.
+tags: [aws, ecs, auto-scaling, target-tracking, cooldown]
+reading_time: 7
+related: ["/ecs-performance/per-task-capacity-and-task-count", "/ecs-performance/metrics-that-matter", "/ecs-performance/right-sizing-and-cost"]
+---
+
+<TLDR>
+ECS Service Auto Scaling changes the number of tasks to keep a metric near a target value. Target tracking is the simplest mode: you pick a metric and a target, and AWS does the rest. Test a policy with a load test before you trust it, and remember that scaling cannot fix a slow database.
+</TLDR>
+
+## What and why
+
+Traffic changes during the day. Auto scaling lets a service add tasks when traffic rises and remove them when it falls. It saves money at quiet times and protects users at busy times.
+
+ECS Service Auto Scaling uses the Application Auto Scaling service. The main mode is **target tracking**. You choose one metric and a target value. For example, "keep the average request count per task near 1,000 per minute".
+
+## How it works
+
+A target tracking policy works like a thermostat (the AWS docs use the same comparison):
+
+1. The policy watches a metric, such as CPU or requests per target.
+2. Above the target, it adds tasks. Below the target, it removes them.
+3. It adds tasks quickly and removes them slowly, to protect availability.
+
+Settings that matter:
+
+| Setting | What it does | Note |
+|---|---|---|
+| Metric and target value | What to keep near the target | Choose a metric that scales with the number of tasks |
+| `ScaleOutCooldown` | Seconds to wait after a scale-out before another one starts | Default 300 seconds for ECS services, as of 2026-11-06 |
+| `ScaleInCooldown` | Seconds after a scale-in before another scale-in can start | Default 300 seconds for ECS services, as of 2026-11-06 |
+| Minimum and maximum capacity | The lowest and highest task counts allowed | Keep the minimum above what normal load needs |
+
+Facts from the AWS docs, checked 2026-11-06:
+
+- Scale-in is blocked until the cooldown ends. A new scale-out can still happen during it.
+- Scale-in is turned off while an ECS deployment runs. Scale-out keeps going.
+- ECS sends CPU and memory utilisation to CloudWatch every minute. A policy does nothing when the data is missing.
+- The `ALBRequestCountPerTarget` metric needs the target group named in its settings. Its target is in requests per target per minute, not per second.
+
+## When to use it (and when not to)
+
+| Use it when | Skip it when |
+|---|---|
+| Traffic varies a lot and tasks are the bottleneck | The database or a shared API is the bottleneck. Scaling adds load to it |
+| You have measured per-task capacity ([Per-task capacity and task count](/ecs-performance/per-task-capacity-and-task-count)) | You have not measured anything. Guess a target and you may flap |
+
+## TaskFlow example
+
+A plausible policy for `task-service`, using the illustrative numbers from [Per-task capacity and task count](/ecs-performance/per-task-capacity-and-task-count):
+
+- Measured per-task capacity: 150 requests per second, which is 9,000 per minute.
+- Target: 7,200 requests per target per minute, about 80% of that.
+- Minimum tasks: 4. Maximum tasks: 12.
+- Cooldowns: 300 seconds each, the default.
+
+:::info[Illustrative data]
+The per-task number and the target are invented for the handbook. Check them against your own measurements before you use them.
+:::
+
+Test it in staging: ramp the load up and down, and watch the task count in Container Insights next to the ALB p95. The task count should follow the load, and the p95 should stay under the SLO.
+
+## Do this
+
+- Set the target below the knee you measured, not at it. Recommendation: leave headroom.
+- Start with the default cooldowns, then tune them from test evidence.
+- Test scale-out and scale-in separately. Scale-in is the slower, more cautious side, so watch it for longer.
+- Check the database connection count during a scale-out test. More tasks mean more connections.
+
+## Avoid this
+
+- Scaling on CPU when the service is waiting on the database. The task count will climb and latency will not improve.
+- Editing or deleting the CloudWatch alarms that Application Auto Scaling manages for you.
+- Setting the minimum to zero for a service that users call all day.
+
+## Further reading
+
+- [AWS: Automatically scale your Amazon ECS service](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-auto-scaling.html) (checked 2026-11-06)
+- [AWS: How target tracking scaling works](https://docs.aws.amazon.com/autoscaling/application/userguide/target-tracking-scaling-policy-overview.html) (checked 2026-11-06)

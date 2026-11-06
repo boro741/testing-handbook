@@ -1,0 +1,73 @@
+---
+title: Choosing a load testing tool
+sidebar_position: 60
+description: A comparison of Locust, k6, JMeter, Gatling and Artillery by language, protocols, distributed mode, CI fit and licence.
+part: 11
+summary: Compare five load tools on language, protocols, distributed mode, CI fit and licence, with a recommendation for each team type.
+tags: [performance, load-testing, locust, k6, jmeter, gatling, artillery, tools]
+reading_time: 7
+related: ["/load-testing-tools/locust-with-pytest", "/load-testing-tools/k6", "/load-testing-tools/distributed-load-and-dashboards"]
+---
+
+<TLDR>
+All five tools can load-test an HTTP API such as TaskFlow. Pick by the language your team writes, the CI setup you have, and the licence your company accepts. The table below holds facts checked on the official sites and GitHub as of 2026-11-06. Check them again before you buy or adopt anything.
+</TLDR>
+
+## What and why
+
+A load tool sends traffic and records what comes back. The tools differ in how you write a test, how far they scale, and what they cost to use. The choice matters less than the test design, but switching later costs time.
+
+Facts below are from the official docs and the GitHub "latest release" page, as of 2026-11-06. Latest releases can change after that date.
+
+| Tool | Script language | Protocols (checked) | Distributed mode | CI fit | Licence | Latest release |
+|---|---|---|---|---|---|---|
+| **Locust** | Python | HTTP built in. Other protocols through your own client code | Yes: one master, many workers | Headless CLI run with CSV output | MIT | 2.47.0, published 2026-10-21 |
+| **k6** | JavaScript (ES modules) | HTTP, WebSocket, gRPC, browser module | Open source runs one instance. Distributed runs use k6-operator on Kubernetes | `k6 run` CLI. A threshold breach fails the run | AGPL-3.0 | v2.3.0, published 2026-09-21 |
+| **JMeter** | Test plans in XML (`.jmx`), built in a GUI or by hand | HTTP and many others through built-in samplers (list not checked here) | Yes: a client controls remote engines | Non-GUI mode (`jmeter -n -t plan.jmx`), which the docs say to use for load tests | Apache-2.0 | 5.6.3 is listed as current on jmeter.apache.org. Release date not shown there |
+| **Gatling** | Scala, Java, Kotlin, JavaScript, TypeScript | HTTP, WebSocket, SSE and JMS under Apache-2.0. gRPC, MQTT, GraphQL and JDBC under an enterprise component licence | Open source is single-machine. Distributed runs are in Gatling Enterprise | Not checked in this chapter | Apache-2.0 | v3.16.0, published 2026-09-29 |
+| **Artillery** | YAML, or JavaScript and TypeScript | HTTP, WebSocket, built-in Playwright. Kinesis by plugin | The homepage says distributed load testing is built in. Not confirmed in the docs checked | `artillery run` CLI | MPL-2.0 | artillery-2.0.34, published 2026-08-14 |
+
+Sources: the GitHub API for each repository (licence and latest release), the Locust, k6, JMeter, Gatling and Artillery docs and sites. The Artillery distributed claim is vendor marketing, not a documented feature. Gatling's single-machine status comes from its open-source page.
+
+## How it works
+
+Three questions narrow the choice fast:
+
+1. **Which language does the team write?** Test code is easier to keep when it matches the team's main language.
+2. **Where does the test run?** A tool that runs from the command line fits a CI job. A GUI-first tool suits manual work.
+3. **How big is the load?** One machine is enough for many APIs. For very large loads, check distributed support before you start.
+
+## When to use it (and when not to)
+
+| If your team | Consider | Why |
+|---|---|---|
+| Writes tests in Python and uses pytest | Locust | Same language. [Locust with pytest](/load-testing-tools/locust-with-pytest) shows the pattern |
+| Writes tests in JavaScript and wants thresholds in the script | k6 | Thresholds and checks sit next to the test. See [k6](/load-testing-tools/k6) |
+| Already runs JMeter plans | JMeter | Keep the plans you have |
+| Works in Scala or Kotlin and wants code-based simulations | Gatling | Simulations are code. Check the licence for the features you need |
+| Writes YAML scenarios and wants a quick CLI | Artillery | YAML is short for simple flows |
+
+Recommendation: start with the tool your team already knows. A test written in a language nobody reads will not be maintained.
+
+## TaskFlow example
+
+The handbook uses Locust for the pytest gate ([Locust with pytest](/load-testing-tools/locust-with-pytest)) and k6 for the smoke script ([k6](/load-testing-tools/k6)). Both target the same local TaskFlow endpoints. The choice is about the team's language, not about TaskFlow itself.
+
+## Do this
+
+- Check the licence with your legal or procurement team. AGPL-3.0 has stronger obligations than MIT or Apache-2.0 if you modify the tool.
+- Check the latest release and the changelog before you adopt a version.
+- Run one small test in each candidate tool, against the same endpoint. Compare the effort, not only the features.
+- Keep scripts in version control, next to the code they test.
+
+## Avoid this
+
+- Choosing by stars or popularity alone. Stars are not evidence of fit.
+- Copying a vendor's claim about scale without a test you can run.
+- Mixing two load tools in one team without a reason.
+
+## Further reading
+
+- [Locust on GitHub](https://github.com/locustio/locust), MIT licence.
+- [k6 on GitHub](https://github.com/grafana/k6), AGPL-3.0 licence.
+- [Apache JMeter](https://jmeter.apache.org/). Its homepage describes the project as open source.

@@ -1,0 +1,81 @@
+---
+title: "Template: sprint test checklist"
+sidebar_position: 9
+description: A checklist for testing one sprint, from entry checks to release, with a filled TaskFlow example.
+part: 98
+summary: Sprint test checklist covering entry checks, per-story checks, regression scope and release checks.
+tags: [template, sprint, checklist, regression]
+reading_time: 2
+related: ["/working-in-teams/testing-in-agile-teams", "/working-in-teams/communicating-quality-and-risk"]
+---
+
+<TLDR>
+Use one checklist per sprint. Check that testing can start, test each story against its acceptance rules, pick a fixed regression scope, and confirm release readiness. Tick each box with a name and a date.
+</TLDR>
+
+## When to use it
+
+Use it for every sprint that ships a build. Copy it into the sprint wiki or your ticket tool at sprint start, and review it at the sprint review.
+
+## Template
+
+```markdown
+# Sprint <n> test checklist
+
+## Entry checks (sprint start)
+- [ ] Stories have acceptance rules that can be tested
+- [ ] Test environment is up and seeded with demo data
+- [ ] Test data for new rules is agreed
+- [ ] Known defects from last sprint are listed
+
+## Per story (before story is "done")
+- [ ] <Story ID>: acceptance rules have test cases with IDs
+- [ ] <Story ID>: positive, negative and boundary cases run
+- [ ] <Story ID>: automated checks added or updated
+- [ ] <Story ID>: no open blocker defects
+
+## Regression scope (agreed at sprint mid-point)
+- [ ] Areas touched by changed code: <list>
+- [ ] Core paths that must always work: <list>
+
+## Release checks (before release candidate)
+- [ ] Full automated suite is green, or each failure has an owner
+- [ ] Regression scope is run on the release candidate build
+- [ ] "Not tested yet" items are listed with reasons
+- [ ] Release summary is sent to the release board
+```
+
+## Filled example
+
+```markdown
+# Sprint 14 test checklist (TaskFlow)
+
+## Entry checks (sprint start)
+- [x] Stories have acceptance rules: title length, priority, status flow
+- [x] Environment is up, demo users alice and bob exist
+- [x] Test data agreed: title of 100 and 101 characters
+- [x] BUG-207 from last sprint is listed as open
+
+## Per story
+- [x] TF-31 (title rules): TC-TASK-003 and TC-TASK-004 run and pass
+- [ ] TF-32 (status flow): boundary cases still to run
+- [x] TF-32: automated checks added to the API test file
+- [x] TF-33 (assign): no open blocker
+
+## Regression scope
+- [x] Task create, read, update and delete
+- [x] Login for alice and bob
+- [ ] Project membership: running on the release candidate
+
+## Release checks
+- [ ] Full suite green: one failure, owner Sam
+- [ ] Regression scope run on RC 14.3
+- [ ] Not tested yet: bulk status change (not in this build)
+- [ ] Release summary sent to the release board
+```
+
+## Tips
+
+- Keep the checklist short. If a box is never ticked, delete it.
+- Agree the regression scope at the sprint mid-point, not on the last day.
+- A box can only be ticked by a person who did the check. Write the name next to it.

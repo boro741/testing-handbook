@@ -1,0 +1,78 @@
+---
+title: Decision table testing
+sidebar_position: 13
+description: Use a decision table to test rules that depend on several conditions at once, shown with the TaskFlow assignment rules.
+part: 3
+summary: List the conditions, list each combination, and write the expected result for each. Uses TaskFlow assignment and access rules.
+tags: [test-design, decision-table, rules, techniques]
+reading_time: 6
+related: [/docs/test-design/equivalence-partitioning-and-boundaries, /docs/test-design/state-transition-testing, /docs/start-here/taskflow-reference]
+---
+
+<TLDR>
+A decision table lists every combination of conditions and the result for each one. It is the best technique when a result depends on two or more yes/no facts. It makes gaps easy to see, because a missing row is a missing test.
+</TLDR>
+
+## What and why
+
+Some rules depend on more than one condition. Testing each condition alone misses the combinations. For example, a user may be logged in, and may or may not be a project member. The result depends on both.
+
+A **decision table** has three parts:
+
+- **Conditions:** the yes/no facts that matter (for example, "caller is a project member").
+- **Actions:** the results (for example, "return 403").
+- **Rules:** one column per combination of conditions, with the action for each.
+
+## How it works
+
+TaskFlow assignment rules, from the reference page:
+
+- You must be logged in (401 otherwise).
+- You must be a project member to change the task (403 otherwise).
+- The assignee must be a project member (422 otherwise).
+
+| Rule | Logged in? | Caller is member? | Assignee is member? | Result |
+|---|---|---|---|---|
+| R1 | No | (not checked) | (not checked) | 401 |
+| R2 | Yes | No | (not checked) | 403 |
+| R3 | Yes | Yes | No | 422 |
+| R4 | Yes | Yes | Yes | 200, task assigned |
+
+"(not checked)" means the answer does not change the result, so the row covers every value of that condition.
+
+## When to use it (and when not to)
+
+| Use it when | Skip it when |
+|---|---|
+| Two or more conditions decide the result | The rule has one input with a range (use boundary values) |
+| You need to show a reviewer every case | The behaviour is a sequence of steps (use state transitions) |
+| Gaps in the rules need to be found | There are no clear yes/no conditions |
+
+## TaskFlow example
+
+The four rules above give four tests. The local suite covers two of them:
+
+| Rule | Covered by |
+|---|---|
+| R3 (assignee not a member, 422) | `test_only_project_members_can_be_assigned` |
+| R4 (assign a member, 200) | `test_assign_a_member_works` |
+| R2 (caller not a member, 403) | Not for assign. `test_non_member_cannot_create_task_in_project` covers the same rule for task creation, not assignment. |
+| R1 (no token, 401) | Not for assign. `test_request_without_token_is_401` covers task creation only. |
+
+That gap is what the table is for. Add a test for R2 on the assign endpoint: a non-member caller should get 403, not 422.
+
+## Do this
+
+- Start with the conditions, then write every combination.
+- Use "(not checked)" when a condition does not change the result, to keep the table short.
+- Check that each row maps to a test, and that every row has an expected result.
+- Put the table in the test design, so reviewers can challenge it.
+
+## Avoid this
+
+- Listing combinations that cannot happen, such as "no token and a member", without marking them as not possible.
+- Writing the table after the tests, so it only describes what you already tested.
+
+## Further reading
+
+See [Equivalence partitioning and boundary values](/test-design/equivalence-partitioning-and-boundaries) for single-input rules.

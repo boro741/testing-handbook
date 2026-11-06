@@ -1,0 +1,107 @@
+---
+title: "Project 6: report and retrospective"
+sidebar_position: 97.13
+description: "Write a one-page test summary for the TaskFlow project, make a risk-based release decision, and run a short retrospective."
+part: 97
+summary: "Turn your bug-hunt and load-test results into a one-page test summary, a release decision and a short retrospective."
+tags: [practice, project, report, retrospective]
+reading_time: 8
+related: ["/practice/project-overview", "/practice/project-5-performance-and-capacity", "/templates/test-summary-report"]
+---
+
+<TLDR>
+Write a one-page test summary for the TaskFlow project. Use your bug-hunt and load-test results to make a release decision, then write a short retrospective. A manager should be able to read the summary in two minutes.
+</TLDR>
+
+## What and why
+
+A test summary tells decision makers what was tested, what was found, and whether the product is safe to release. Many testers stop at a long log of results. This step asks you to compress the work into one page and lead with the answer.
+
+Use the sections from [Template: test summary report](/templates/test-summary-report), in the same order.
+
+## Step 1: Gather your evidence
+
+Collect four things before you write:
+
+- The bug-free suite result: `pytest tests -q` run in `examples/taskflow`. When this page was written, all 59 tests in `tests` passed with no bug switched on.
+- For each bug ID you found in the bug hunt, the test that failed and the request that showed the problem.
+- The load-test numbers from project 5: latency, error rate, and the targets you set.
+- A list of what you did not test.
+
+Leave out anything you did not run. If you suspect a bug that no test catches, put it in the risks section, not in the results.
+
+## Step 2: Write the summary
+
+Keep each section short:
+
+- **Recommendation:** one of Release, Release with known issues, or Do not release, plus one sentence on why.
+- **Scope:** what you tested and what you did not.
+- **Results:** a table of planned, run, passed, failed and blocked counts.
+- **Defects:** open defects by severity. List each Critical defect on its own line.
+- **Risks and gaps:** what the results cannot tell you.
+- **Next steps:** the first three actions, in order.
+
+## Step 3: Make a risk-based decision
+
+A release decision is not a count of bugs. For each open defect, ask two questions. How bad is it if a user meets it? How likely is a user to meet it? Then ask whether there is a workaround and whether the fix can be tested before release.
+
+Rules of thumb for this project (a recommendation, not a standard):
+
+- A defect that lets a user see or change data they should not see is a release blocker.
+- A defect that loses or corrupts data is a blocker unless you can show it is rare and reversible.
+- A defect in input checking that exposes no data can ship with a known-issue note, if a workaround exists.
+
+## Step 4: Write the retrospective
+
+Use three short lists:
+
+- **What went well.** Name a practice you would keep, such as a test that caught a bug early.
+- **What to change.** Name one thing that slowed you down or hid a problem.
+- **What to test next.** Name the next test you would write, and which bug or risk it covers.
+
+Write each item as a fact from your project. "The bug switch let me reproduce each bug with one command" is more useful than "testing went well."
+
+## Model report (try your own first)
+
+:::warning[Read after your own report]
+The model report names every seeded bug. Write your own summary from your own results first.
+:::
+
+<details>
+<summary>Show a model report</summary>
+
+# Test summary: TaskFlow practice release 1.0, week of 2026-11-02
+
+**Recommendation:** Do not release. Three Critical defects let a user read another user's task, log in as bob with any password, or see tasks from other projects.
+
+**Scope tested:** The `tests` folder (59 tests, bug-free run), a bug-switch run for each ID B01 to B08, and the load test from project 5 against the local app. Not tested: email, a deployed environment, and browser tests under load.
+
+**Results**
+
+| Type | Planned | Run | Passed | Failed | Blocked |
+|---|---|---|---|---|---|
+| API suite, bugs off | 59 | 59 | 59 | 0 | 0 |
+
+Bug switch: 8 of 8 IDs caught by at least one failing test.
+
+**Defects (all open)**
+
+- Critical: B03 (non-member can read a task), B06 (bob accepted with any password), B07 (list shows other projects' tasks).
+- Major: B05 (deleted task still readable), B04 (non-member can be assigned), B02 (TODO can jump to DONE).
+- Minor: B01 (101-character title accepted), B08 (priority URGENT accepted).
+
+:::info[Illustrative data]
+The load numbers below are invented to show the format. Your numbers come from your own runs.
+:::
+
+**Load test (illustrative):** 50 virtual users for 5 minutes on GET /api/tasks. p95 latency 240 ms against a 500 ms target. Error rate 0.2% against a 1% target.
+
+**Risks and gaps:** Load was tested on the local app only. The access defects were found by tests written for this project, not by an independent review.
+
+**Next steps:** (1) Fix B03, B06 and B07, and add a test for each fix. (2) Fix B05, B04 and B02. (3) Rerun the bug-free suite and the bug switch.
+
+</details>
+
+## Retrospective and next steps
+
+Your own retrospective should use the three lists from step 4. Then plan the next round. Good next tests for this app are the access rules for every endpoint, and a contract check so that changes to the API shape are caught before the UI breaks.

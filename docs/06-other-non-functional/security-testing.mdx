@@ -1,0 +1,103 @@
+---
+title: Security testing fundamentals
+sidebar_position: 35
+description: What security testing checks, the OWASP Top 10 at a high level, and a first OWASP ZAP scan against TaskFlow.
+part: 6
+summary: A plain-English guide to security testing, the OWASP Top 10 (2025) and a first ZAP scan.
+tags: [security, owasp, zap, non-functional]
+reading_time: 9
+related: ["/start-here/taskflow-reference", "/testing-by-layer/api-testing", "/fundamentals/test-levels-and-types"]
+---
+
+<TLDR>
+Security testing checks that an app protects its data and resists misuse. You do not need to be a security expert to start. Run an automated scan on every build, test your access rules with two users, and bring in a specialist for deeper reviews.
+</TLDR>
+
+## What and why
+
+Normal tests ask "does it work?" Security tests ask "can someone make it do something it should not?"
+
+Security testing looks for three kinds of failure:
+
+- Someone reads data they should not see.
+- Someone changes data they should not touch.
+- Someone takes the service down.
+
+A **vulnerability** is a weakness in code or configuration. The **attack surface** is every place where a user or another system can send input: endpoints, forms, tokens and files. The more inputs you have, the more you need to test.
+
+## How it works
+
+Two broad approaches exist:
+
+- **Static testing (SAST)** reads the code and config without running them. It finds things like hard-coded passwords.
+- **Dynamic testing (DAST)** attacks the running app and reports what it finds. OWASP ZAP is a DAST tool.
+
+The [OWASP Top 10](https://top10.owasp.org/2025/) is a list of the most common web app risk categories. The 2025 edition, as of 2026-11-06, lists:
+
+| ID | Category |
+|---|---|
+| A01 | Broken Access Control |
+| A02 | Security Misconfiguration |
+| A03 | Software Supply Chain Failures |
+| A04 | Cryptographic Failures |
+| A05 | Injection |
+| A06 | Insecure Design |
+| A07 | Authentication Failures |
+| A08 | Software or Data Integrity Failures |
+| A09 | Security Logging and Alerting Failures |
+| A10 | Mishandling of Exceptional Conditions |
+
+Use the list as a set of questions for each feature, not as a full test plan. For example, "Can a user see a task from a project they are not in?" maps to A01.
+
+## When to use it (and when not to)
+
+| Use it when | Skip it when |
+|---|---|
+| Your app stores personal data, money or credentials | The page is static and takes no input |
+| You add an endpoint, or change login or permissions | You have not written permission to test the target |
+| Before a major release | You expect a scan to replace a penetration test |
+
+A scanner is a good first filter. It does not prove an app is secure. A penetration test (a manual attack by a skilled tester) finds problems that scanners miss.
+
+## TaskFlow example
+
+Start the local app with `uvicorn app.main:app --reload` in `examples/taskflow/`. Then run the ZAP baseline scan. It is a passive scan. It maps the site and flags issues without launching attacks.
+
+```bash
+docker run -t ghcr.io/zaproxy/zaproxy:stable \
+  zap-baseline.py -t http://host.docker.internal:8000
+```
+
+On Linux, `host.docker.internal` may not resolve. Use your machine's LAN address instead. Only scan apps you own or have permission to test.
+
+:::info[Illustrative data]
+The findings below come from reading the TaskFlow code. They are not the output of a ZAP run made for this handbook.
+:::
+
+Four things to check in the local code:
+
+1. **A04 Cryptographic Failures.** The app stores passwords in plain text. The code says so in a comment. A real app must store only salted password hashes.
+2. **A07 Authentication Failures.** Login has no rate limit, so an attacker can try passwords without limit. Tokens are kept in memory and never expire.
+3. **A01 Broken Access Control.** The tests check that a non-member cannot create a task. They do not check that a non-member cannot read one with `GET /api/tasks/{id}`. Add that test.
+4. **A02 Security Misconfiguration.** The local app runs with demo users and a fixed demo password. Never deploy it with those values.
+
+See [the TaskFlow reference](/start-here/taskflow-reference) for the endpoints used above.
+
+## Do this
+
+- Run an automated DAST scan on each build, against a test environment.
+- Test each access rule with two users: the owner and a stranger. (Recommendation)
+- Treat scan output as a list to triage, not a verdict. Mark each finding as real, false positive or accepted risk.
+- Keep secrets out of code, test data and logs. See [test data management](/automation-engineering/test-data-management).
+- Re-run security checks after any change to login, tokens or permissions.
+
+## Avoid this
+
+- Scanning a system you do not own or have written permission to test.
+- Saying "the scan passed, so it is secure".
+- Leaving security to the last sprint before release.
+
+## Further reading
+
+- [OWASP Top 10 (2025 edition)](https://top10.owasp.org/2025/). Checked 2026-11-06.
+- [ZAP baseline scan documentation](https://www.zaproxy.org/docs/docker/baseline-scan/). Checked 2026-11-06. ZAP describes itself as free and open source.

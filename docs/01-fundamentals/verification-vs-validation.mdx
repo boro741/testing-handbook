@@ -1,0 +1,70 @@
+---
+title: Verification vs validation, QA vs QC
+sidebar_position: 2
+description: The difference between verification and validation, and between QA and QC, with simple TaskFlow examples.
+part: 1
+summary: Verification asks "built right?", validation asks "right thing?". QA prevents defects, QC finds them.
+tags: [fundamentals, verification, validation, qa, qc]
+reading_time: 4
+related: [/docs/fundamentals/what-is-software-testing]
+---
+
+<TLDR>
+Verification asks: did we build the product right? Validation asks: did we build the right product? QA focuses on the process that prevents defects. QC focuses on checking the product for defects.
+</TLDR>
+
+## What and why
+
+Teams mix these words up often. The difference matters because each one catches different problems.
+
+- **Verification** checks the product against its specification or design.
+- **Validation** checks the product against what real users need.
+
+A product can pass verification and still fail validation. It does exactly what the spec says, but the spec was wrong.
+
+## How it works
+
+| | Verification | Validation |
+|---|---|---|
+| Question | Did we build it right? | Did we build the right thing? |
+| Compares with | Requirements, design, specs | User needs and real use |
+| Typical activities | Reviews, static checks, API and unit tests | Demos, pilots, user acceptance tests |
+| Done by | Developers and testers | Product owners, users, testers |
+
+**QA** (quality assurance) is about the process. It sets standards, improves how the team works, and tries to stop defects from being made.
+
+**QC** (quality control) is about the product. It checks the output, for example by running tests before a release.
+
+Recommendation: treat QA as the process that makes defects rarer, and QC as the checks that catch the ones that remain. Teams use the terms differently, so agree on your own meaning.
+
+## When to use it (and when not to)
+
+| Use this split when | Skip the formal split when |
+|---|---|
+| A team mixes up review and testing | You are a team of two working closely together |
+| Stakeholders ask "is it done?" and mean different things | The product is a small internal script |
+
+## TaskFlow example
+
+The TaskFlow rule says a title is 1 to 100 characters.
+
+- **Verification:** a test sends a 101-character title and checks that the API returns 422. This checks the code against the rule.
+- **Validation:** you ask five real users if 100 characters is enough for a task name. This checks the rule against real needs.
+
+If the users say 100 is too short, the test still passes, and the product is still wrong. Validation catches that.
+
+## Do this
+
+- Name the reference you verify against, such as the spec or user story.
+- Run validation with real users or realistic scenarios, not only with the team.
+- Use reviews as verification before any code is tested.
+- Agree on what QA and QC mean for your team.
+
+## Avoid this
+
+- Using "testing" to mean only one of these two things.
+- Treating a passing verification as proof the feature is right.
+
+## Further reading
+
+Start with [What is software testing](/fundamentals/what-is-software-testing) for the basics of testing.

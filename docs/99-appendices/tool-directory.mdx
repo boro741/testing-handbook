@@ -1,0 +1,84 @@
+---
+title: Tool directory
+sidebar_position: 1
+description: Verified facts for 21 AI and performance testing tools, with licence, language, integration, limits and adoption evidence.
+part: 99
+summary: Licence, language, limits, adoption evidence and last release for each AI and load testing tool in the handbook.
+tags: [tools, ai, performance, directory]
+reading_time: 8
+related: ["/ai-in-testing/ai-testing-landscape", "/appendices/sources", "/load-testing-tools/choosing-a-tool"]
+---
+
+<TLDR>
+A checked list of 21 tools for browser automation, AI evaluation, API test generation and load testing. Every release date and licence was read from the repo page or the GitHub release API on 2026-11-06. Cells marked "not verified" were not checked, so do not rely on them.
+</TLDR>
+
+## What and why
+
+Tool claims change fast. This directory records what we could verify, and the date we checked it. Use it as a starting point, then check the repo yourself before you adopt a tool.
+
+Each row has the same columns, so you can compare tools side by side. Stars are not in the table on purpose. They are not evidence of production readiness ([The AI testing landscape](/ai-in-testing/ai-testing-landscape) explains why).
+
+**Adoption evidence types.** Each claim is one of four types:
+
+- **Documented production use:** a company describes its own setup in a primary source.
+- **Community recommendation:** people recommend it, without a company case.
+- **Individual experiment:** one person's trial.
+- **Vendor marketing:** the maker's own claim.
+
+**Dates.** "Last release" is the latest GitHub release shown by the repo's release API, with the date it was published, as of 2026-11-06. Where the repo shows a sub-package tag, we say so.
+
+## How it works
+
+Use the table in three steps:
+
+1. Filter by the problem you have. Browser automation, AI evaluation, API test generation or load testing.
+2. Check the licence. "Open-core" means a free core with paid extras, and some parts may have different terms.
+3. Check the adoption evidence before you trust a claim.
+
+## The directory
+
+| Tool | Problem solved | Uses AI? | Licence | Languages | Integrations (pytest, Playwright, CI) | MCP or CLI for coding agents | Limitations | Adoption evidence (type) | Repo | Last release (as of 2026-11-06) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Playwright | Cross-browser UI and API test automation | No (framework you script) | Apache-2.0 (open source) | Node.js, Python, Java, .NET | Pytest plugin for Python; runs in CI (not checked here) | CLI `npm init playwright@latest`; MCP via Playwright MCP | You write the tests; not an AI tool | Maintained by Microsoft. Company usage not checked here | [microsoft/playwright](https://github.com/microsoft/playwright) | v1.65.0, 2026-11-05 |
+| Playwright MCP | Lets an AI client drive a browser | Yes, in use: the LLM is in the client, not the server | Apache-2.0 | Node.js (run with `npx`) | MCP clients; Docker image | MCP server (`npx @playwright/mcp@latest`) | Accessibility snapshot by default; vision opt-in; "not a security boundary" | No company case found. Not verified | [microsoft/playwright-mcp](https://github.com/microsoft/playwright-mcp) | v0.0.84, 2026-10-31 |
+| Browser Use | AI browser agent for tasks and exploration | Yes: an LLM picks each action | MIT (open-source library; separate hosted Cloud) | Python and TypeScript | Python library; pytest not checked | Not verified | Results can differ between runs. Third-party reviews only | Community opinion (third-party reviews). No first-party case found | [browser-use/browser-use](https://github.com/browser-use/browser-use) | 0.13.14, 2026-10-26 |
+| Stagehand | SDK mixing AI steps (`act`, `observe`, `extract`) with Playwright-style code | Optional: AI steps are opt-in | MIT | TypeScript, Python, Go (per repo README) | Playwright-style APIs; CI not checked | SDK. A separate hosted Browserbase MCP server exists (not this repo) | Caching and hosting are tied to Browserbase, which its docs recommend | Vendor marketing (its docs). Third-party reviews. No company case found | [browserbase/stagehand](https://github.com/browserbase/stagehand) | stagehand-server-v3/v3.7.7, 2026-10-23 (GitHub's latest tag) |
+| Appium | Mobile app automation through WebDriver | No | Apache-2.0 | Any language with a WebDriver client (docs) | Not verified | Not verified | Device setup effort; not checked further | Not verified | [appium/appium](https://github.com/appium/appium) | @appium/opencv@5.0.2, 2026-10-27 (sub-package tag; main Appium release not confirmed) |
+| Promptfoo | Evaluate and red-team LLM app outputs | Optional: LLM graders, plus fixed checks (`is-json`, `regex`) | MIT | YAML config; CLI and JS/TS library; Python assertions | CI/CD integration (docs, GitHub Action) | CLI (`promptfoo eval`). MCP not shown | Runs need a model provider; LLM graders cost money and vary | Documented production use: Semgrep engineering blog (2024-09-06). Read via a third-party mirror | [promptfoo/promptfoo](https://github.com/promptfoo/promptfoo) | 0.125.1, 2026-10-25 |
+| DeepEval | LLM and RAG evaluation with pytest-style runs | Yes: most predefined metrics use LLM-as-a-judge (docs) | Apache-2.0 | Python and TypeScript | Pytest-style (`deepeval test run`) | CLI. MCP not verified | Judge scores depend on the judge model | Vendor marketing (README). No company case found | [confident-ai/deepeval](https://github.com/confident-ai/deepeval) | python-v4.2.4, 2026-09-22 |
+| Ragas | Metrics for RAG pipelines | Some metrics use an LLM or embeddings | Apache-2.0 | Python | Python library; pytest not verified | Not verified | Metric names and inputs change between versions | Not verified | [vibrantlabsai/ragas](https://github.com/vibrantlabsai/ragas) | v0.4.3, 2026-01-13 |
+| Langfuse | Tracing, prompts, datasets and evals for LLM apps | Partly: tracing and evals for AI apps; judges optional | MIT, except the `ee` folders (open-core) | Not verified | Not verified | Not verified | Self-hosting needs operations work. `ee` folders are not MIT | Third-party claim (Khan Academy, via a vendor-review site, not checked at source). No primary case found | [langfuse/langfuse](https://github.com/langfuse/langfuse) | v4.76.0, 2026-11-05 |
+| Schemathesis | Property-based API tests from OpenAPI and GraphQL | No (property-based testing) | MIT | Python | pytest/unittest test class; CLI `st run` | CLI. MCP not verified | Only as good as the spec. Business rules need hand-written checks | Company origin at Kiwi.com per the author's account (search excerpts only; not opened). Academic evaluation (ICSE 2022 poster) | [schemathesis/schemathesis](https://github.com/schemathesis/schemathesis) | v4.33.1, 2026-11-04 |
+| EvoMaster | System-level API test generation. Repo calls it "AI-driven" | Repo says AI-driven; technique not verified | LGPL-3.0 | Java, Kotlin (white-box, per repo) | Not verified | Not verified | White-box mode targets JVM apps | Not verified | [WebFuzzing/EvoMaster](https://github.com/WebFuzzing/EvoMaster) | v6.2.0, 2026-09-15 |
+| Keploy | Record and replay API traffic into tests. Repo says AI expands coverage | Yes, per repo: AI draws on recordings and OpenAPI | Apache-2.0 | Go, Java, Python and others (listed on repo) | Not verified | Not verified | Needs recorded traffic or a spec. AI details not verified | Not verified | [keploy/keploy](https://github.com/keploy/keploy) | v3.6.221, 2026-11-06 |
+| Locust | Load tests written in Python | No | MIT | Python | Headless run with `--csv` (repo docs); pytest in [Locust with pytest](/load-testing-tools/locust-with-pytest) | Not verified | Load generator needs its own CPU headroom | Not verified | [locustio/locust](https://github.com/locustio/locust) | 2.47.0, 2026-10-21 |
+| k6 | Load tests in JavaScript with thresholds | No | AGPL-3.0 | JavaScript scripts; Go engine (per repo) | CI not checked here | Not verified | AGPL-3.0: review the terms before you embed it | Not verified | [grafana/k6](https://github.com/grafana/k6) | v2.3.0, 2026-09-21 |
+| Artillery | Load testing, Playwright E2E and synthetic monitoring | No | MPL-2.0 (some Azure modules BSL, per repo) | Not verified | Not verified | Not verified | Not verified | Not verified | [artilleryio/artillery](https://github.com/artilleryio/artillery) | artillery-2.0.34, 2026-08-14 |
+| JMeter | Load testing across many protocols | No | Apache-2.0 | Java (test plans in XML `.jmx`) | Not verified | Not verified | GUI-heavy; test plans are XML | Not verified | [apache/jmeter](https://github.com/apache/jmeter) | rel/v5.6.3, 2024-01-09 (GitHub mirror's latest; check the Apache download page for newer) |
+| Selenium | Browser automation through WebDriver | No | Apache-2.0 | Java, Python, C#, Ruby, JavaScript, Kotlin (docs language list) | Grid for tests on several machines (docs). pytest and CI not checked | Not verified | Browser list in docs includes Internet Explorer. Not run here | Not verified | [SeleniumHQ/selenium](https://github.com/SeleniumHQ/selenium) | selenium-4.52.0, 2026-10-29 |
+| Cypress | JavaScript browser tests that run in the browser | No | MIT | JavaScript and TypeScript | Firefox and Chrome-family browsers. Parallel runs through paid Cypress Cloud (docs) | Not verified | Parallelism and spec prioritising need Cypress Cloud, a paid service | Not verified | [cypress-io/cypress](https://github.com/cypress-io/cypress) | v16.2.1, 2026-10-28 |
+| REST Assured | Java DSL for testing REST services | No | Apache-2.0 | Java. Scala through a support module (site) | Test framework and CI not verified | Not verified | Java-centred. Not run here | Not verified | [rest-assured/rest-assured](https://github.com/rest-assured/rest-assured) | 6.3.0, 2026-10-23 (Maven Central; the repo has no GitHub release) |
+| Postman CLI | Run Postman collections and send requests from a terminal | No | Not verified | Test scripts in JavaScript (`pm.test`) | Local collection run worked without login on 1.73.0, see [the Postman CLI page](/testing-by-layer/api-testing-with-postman-cli) | CLI. Agent plugins mentioned in its help, not tried | gRPC and GraphQL runs: unary only, paid plans (Postman docs). OAuth 2.0 not supported (Postman docs) | Not verified | Not an open repo that we checked | 1.73.0 installed here. Release date not verified |
+| pact-python | Consumer-driven contract tests in Python | No | MIT | Python | pytest. Consumer test ran, see [integration and contract testing](/testing-by-layer/integration-and-contract-testing) | Not verified | Provider verification not run here | Not verified | [pact-foundation/pact-python](https://github.com/pact-foundation/pact-python) | pact-python-ffi/0.5.12.1, 2026-10-23 (GitHub's latest tag; PyPI package 4.2.0 installed) |
+
+:::info[Checked, not run]
+This table records facts from repo pages, release APIs and vendor docs, read on 2026-11-06. We did not run these tools to test their claims.
+:::
+
+## Do this
+
+- Re-check the "last release" and licence cells before a decision. They change.
+- Trial each tool on TaskFlow first, using the rules in [the TaskFlow reference](/start-here/taskflow-reference).
+- Write down the adoption evidence type when you cite a tool in a decision.
+
+## Avoid this
+
+- Choosing a tool by star count or by a vendor page alone.
+- Treating a "not verified" cell as "no".
+- Reading an open-core licence as fully open source. Check which folders are covered.
+
+## Further reading
+
+- [The AI testing landscape](/ai-in-testing/ai-testing-landscape) for the groups and the checklist.
+- [Sources](/appendices/sources) for each URL opened and its result.

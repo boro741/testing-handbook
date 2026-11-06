@@ -1,0 +1,98 @@
+---
+title: Testing in agile teams
+sidebar_position: 15.1
+description: Where testing fits in Scrum and Kanban teams, how the three amigos session works, and what to do when testing falls behind.
+part: 15
+summary: Testing happens in every sprint, not in a phase at the end. Test during refinement and building, and make testing part of done.
+tags: [agile, scrum, kanban, teams, definition-of-done]
+reading_time: 6
+related: [/planning-strategy/requirements-and-testability, /planning-strategy/entry-and-exit-criteria, /working-in-teams/test-estimation-in-practice, /working-in-teams/bug-triage-meetings]
+---
+
+<TLDR>
+In an agile team, testing happens inside each sprint, not in a phase after development. Testers join refinement, agree with the team what "done" means, and make testing visible on the board. When testing falls behind, the team decides what to move or cut. It should not quietly push untested work into "done".
+</TLDR>
+
+## What and why
+
+A Scrum team works in sprints, usually two to four weeks long, and ends each one with working software. A Kanban team pulls work across a board as capacity frees up, with no fixed sprint length.
+
+If a tester starts only when developers finish, problems are found late, when they are slower and costly to fix. Agile teams move testing earlier so it runs alongside building. This is often called "shifting left".
+
+## When to use it (and when not to)
+
+| Use these practices when | Be careful when |
+|---|---|
+| The team works in sprints or on a continuous board | A fixed release has a separate test phase. The ideas still help, but the plan must change |
+| Stories are small enough to finish in one sprint | A story is too big to test in one sprint. Split it first |
+| Testers sit in the same team as developers | Testers sit elsewhere and only see work at handover |
+
+## Where testing fits in a sprint
+
+- **Refinement:** the tester reads each story and asks how it could fail. This is where the three amigos meet.
+- **Sprint planning:** test work counts as part of each story, not as extra work added later.
+- **During the sprint:** the tester checks each story as soon as a first version is ready. They do not wait for the last day.
+
+## The three amigos
+
+The three amigos is a short meeting before a story enters a sprint. It brings together the business analyst (or product owner), a developer and a tester. The analyst asks what the user needs. The developer asks how it will be built. The tester asks how it could fail and how to check it.
+
+The output is acceptance criteria written as concrete examples. A developer can build to them, and a tester can check them.
+
+Recommendation: hold this session for every story, not only the large ones. Keep it to 15 to 30 minutes, and stop when the examples are clear.
+
+## Definition of done includes testing
+
+The definition of done is a shared list of conditions a story must meet before it counts as complete. Testing items often include:
+
+- the acceptance criteria are checked
+- the agreed automated tests exist for the new code
+- exploratory testing has covered the changed area
+- no open defects of the highest severity remain
+
+Recommendation: keep the list to five to eight items.
+
+## Testing on the sprint board
+
+Give testing its own column, such as "In test", between "In progress" and "Done". This makes the test queue visible. A card moves to "Done" only after the tester has checked it.
+## TaskFlow example
+
+:::info[Illustrative example]
+The story below is made up for this page. It is not from a real sprint.
+:::
+
+Story: a project member can move a task from IN_PROGRESS to IN_REVIEW. In refinement, the three amigos agree on examples. A task in IN_PROGRESS can move to IN_REVIEW. A task in TODO cannot skip to IN_REVIEW, because TODO only moves to IN_PROGRESS. A task in DONE cannot move to IN_REVIEW either. A user who is not a project member must not change the task.
+
+The developer asks whether the change should also send an event to other services. The production design says yes, but the local TaskFlow app has no message queue, so the tester checks the API response only.
+
+During the sprint, the tester writes checks for the allowed move, the blocked moves and the non-member case. The card moves to "In test" when the developer opens a merge request. The tester finds that the non-member case is not blocked. The card goes back to "In progress", and the developer and tester fix it together before it reaches "Done".
+
+The rules used here are on [the TaskFlow reference](/start-here/taskflow-reference).
+
+## When testing lags behind development
+
+Warning signs are cards piling up in "In test", and developers starting new stories while old ones wait. The team has several options:
+
+1. Make the lag visible. Show the number of cards waiting for test at the daily stand-up.
+2. Stop starting new work until the queue shrinks. Pull work, do not push it.
+3. Pair a developer and a tester on the waiting story.
+4. Ask the product owner which stories can move to the next sprint. Do not skip tests quietly.
+5. Automate repeated checks, so testers have time for risky areas. See [The test automation pyramid](/automation-engineering/test-automation-pyramid).
+
+## Do this
+
+- Include a tester in refinement for every story.
+- Write acceptance criteria as examples, and agree them before the sprint.
+- Keep testing on the board, in its own column.
+- Keep the definition of done short and visible.
+- Raise testing lag at stand-up, early, not at the review.
+
+## Avoid this
+
+- Marking a story "done" and planning to test it later.
+- Cutting tests without telling the product owner what risk that adds.
+
+## Further reading
+
+- [Entry and exit criteria](/planning-strategy/entry-and-exit-criteria) gives a formal way to decide when work is ready to test and ready to finish.
+- [Test estimation in practice](/working-in-teams/test-estimation-in-practice) shows how to size the test work inside a story.

@@ -1,0 +1,61 @@
+---
+title: "Template: test case"
+sidebar_position: 2
+description: A copy-paste manual test case template with a filled TaskFlow example.
+part: 98
+summary: Test case template with preconditions, steps and expected results.
+tags: [template, test-case]
+reading_time: 2
+related: []
+---
+
+<TLDR>
+A test case is one check written so anyone can run it and get the same verdict. Keep one goal per case.
+</TLDR>
+
+## When to use it
+
+Use it for manual tests, exploratory findings you want to repeat, and as the plan before you automate a check.
+
+## Template
+
+```markdown
+**ID:** TC-
+**Title:**
+**Requirement:** (rule or story ID)
+**Priority:** High / Medium / Low
+**Type:** Functional / Negative / Boundary / Security / ...
+
+**Preconditions:**
+**Test data:**
+
+| Step | Action | Expected result |
+|---|---|---|
+| 1 | | |
+
+**Postconditions / cleanup:**
+**Automated:** Yes (file::test) / No
+```
+
+## Filled example
+
+```markdown
+**ID:** TC-004
+**Title:** Title of 101 characters is rejected
+**Requirement:** BR-1 Title is 1 to 100 characters
+**Priority:** High
+**Type:** Boundary, negative
+
+**Preconditions:** Alice is logged in. Project 1 exists.
+**Test data:** title = "a" repeated 101 times, priority = LOW
+
+| Step | Action | Expected result |
+|---|---|---|
+| 1 | POST /api/tasks with the test data | 422 Unprocessable |
+| 2 | GET /api/tasks?project_id=1 | No task with that title |
+
+**Postconditions / cleanup:** None.
+**Automated:** Yes (tests/test_taskflow_api.py::test_task_title_length_boundaries)
+```
+
+Write the expected result as something you can observe: a status code, a message, a value on screen. Avoid "works correctly".

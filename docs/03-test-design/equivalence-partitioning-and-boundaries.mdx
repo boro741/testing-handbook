@@ -1,0 +1,78 @@
+---
+title: Equivalence partitioning and boundary values
+sidebar_position: 12
+description: Two test design techniques that pick a small set of inputs with the best chance of finding bugs, shown with the TaskFlow title rule.
+part: 3
+summary: Split inputs into groups that behave the same, then test the edges of each group. Uses the TaskFlow 1 to 100 character title rule.
+tags: [test-design, equivalence-partitioning, boundary-values, techniques]
+reading_time: 6
+related: [/docs/fundamentals/test-levels-and-types, /docs/test-design/negative-and-edge-cases, /docs/start-here/taskflow-reference]
+---
+
+<TLDR>
+Equivalence partitioning splits all possible inputs into groups that should behave the same way. Boundary value analysis then tests the values at the edges of each group, where bugs are most common. Together they give you a small, strong set of tests for any range or limit.
+</TLDR>
+
+## What and why
+
+You cannot test every possible input. A title can be any length, so there are endless inputs to try.
+
+**Equivalence partitioning** (EP) groups inputs that should behave the same. You need one test from each group, not many.
+
+**Boundary value analysis** (BVA) tests the values at the edge of each group. Off-by-one mistakes, such as `<` where `<=` was meant, often break at the edge, not in the middle.
+
+## How it works
+
+For the TaskFlow title rule (1 to 100 characters):
+
+| Partition | Lengths | Expected | Boundary values to test |
+|---|---|---|---|
+| Too short (invalid) | 0 | 422 | 0 |
+| Valid | 1 to 100 | 201 | 1 and 100 |
+| Too long (invalid) | 101 or more | 422 | 101 |
+
+The edges are 0, 1, 100 and 101. Four tests cover all three partitions.
+
+## When to use it (and when not to)
+
+| Use it when | Skip it when |
+|---|---|
+| An input has a range, a length or a limit | The input is free text with no rule |
+| The rule is clear enough to say what is valid | The rule is still undecided |
+| You need a small, defensible set of tests | You are exploring for surprises (use exploratory testing) |
+
+## TaskFlow example
+
+The TaskFlow reference says a title must be 1 to 100 characters. The local suite already has a parametrised test for these boundaries, in `examples/taskflow/tests/test_taskflow_api.py`:
+
+```python
+# --- title rule: 1 to 100 characters (boundary value analysis) --------------
+
+@pytest.mark.parametrize("length, expected", [(0, 422), (1, 201), (100, 201), (101, 422)])
+def test_task_title_length_boundaries(client, length, expected):
+    r = new_task(client, login(client), title="a" * length)
+    assert r.status_code == expected, r.text
+```
+
+`parametrize` runs the same test once for each row. This is the syntax documented in the current pytest guide (checked 2026-11-06 against the pytest 9.x docs). The tests run against the local API, so no cloud setup is needed.
+
+:::tip
+"Characters" can be read more than one way. The local app counts Python characters, so one emoji counts as one character. A 100-emoji title is accepted, and 101 is rejected. Decide what "character" means for your product, and write it in the rule.
+:::
+
+## Do this
+
+- Write the partitions first, then the boundaries.
+- Test both sides of every edge, such as 0 and 1, and 100 and 101.
+- Add one value from the middle of each valid partition, if the rule has behaviour there.
+- Name the rule in the test, so the reader sees where the boundaries came from.
+
+## Avoid this
+
+- Testing many values from the same partition. One is enough, and the rest are wasted effort.
+- Forgetting the invalid partitions, because the valid path is more interesting.
+
+## Further reading
+
+- [pytest: how to parametrize tests](https://docs.pytest.org/en/stable/how-to/parametrize.html) (checked 2026-11-06).
+- For the rest of the invalid inputs, see [Negative and edge-case testing](/test-design/negative-and-edge-cases).

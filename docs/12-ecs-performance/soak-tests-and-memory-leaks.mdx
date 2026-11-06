@@ -1,0 +1,70 @@
+---
+title: Soak tests and memory leaks
+sidebar_position: 69
+description: How to run a long, steady load test on ECS tasks to find a slow memory leak, and how to tell a leak from normal memory use.
+part: 12
+summary: A soak test runs steady load for hours. A memory line that keeps climbing under flat load is a suspect, not yet a verdict.
+tags: [aws, ecs, soak-test, memory, leak, load-testing]
+reading_time: 6
+related: ["/ecs-performance/metrics-that-matter", "/ecs-performance/right-sizing-and-cost", "/performance-fundamentals/performance-testing-types"]
+---
+
+<TLDR>
+A soak test holds a steady load for hours, not minutes. It finds problems that short tests miss, such as a memory leak that grows a little each hour. A rising memory line under flat load is a reason to profile the code, not a reason to add memory.
+</TLDR>
+
+## What and why
+
+A short load test can pass while a problem is building. A slow leak in a Node, Java or Python service may add a few megabytes an hour. A 15-minute test never shows it. A [soak test](/start-here/glossary) runs the same load for a long time, so slow growth becomes visible.
+
+On ECS with Fargate, memory is a hard limit. The AWS docs describe the task memory value as "the hard limit of memory to present to the task". If the service's memory grows toward that limit, the risk of failure rises. Watch it before it becomes an outage.
+
+## How it works
+
+1. **Hold the load steady.** Use a rate below the knee you found in [Per-task capacity and task count](/ecs-performance/per-task-capacity-and-task-count). Recommendation: pick a duration that covers your longest normal busy period, and write it down before the run.
+2. **Graph memory per task over time.** Container Insights gives `MemoryUtilized` for the service, in MiB. The AWS docs warn that this metric can be inaccurate for Java applications that use the ZGC garbage collector.
+3. **Look at the trend, not the peak.** Memory that rises and then flattens is normal warm-up. Memory that keeps rising under flat load is a suspect.
+4. **Confirm with a profiler.** Use your language's heap or memory tool to find what grows. The metric tells you that memory grows. It does not tell you why.
+5. **Re-run after the fix.** The line should flatten under the same load and duration.
+
+Use the decision table in [Metrics that matter for ECS](/ecs-performance/metrics-that-matter). Its memory row says: profile first, and raise memory only as a stopgap.
+
+## When to use it (and when not to)
+
+| Use it when | Skip it when |
+|---|---|
+| You changed code that allocates memory, caches data or holds connections | You only need a yes or no on today's build. A 15-minute smoke test is enough |
+| A service has been running for days in production with no restart | The service restarts on a schedule, which hides the trend |
+
+## TaskFlow example
+
+Run the local TaskFlow with the Locust script in `examples/taskflow/loadtest/` for a long time, then compare memory at the start and the end. The local app is a different target from ECS, so use it to practise the method. Do not treat it as ECS evidence.
+
+For ECS, an illustrative trend could look like this:
+
+:::info[Illustrative data]
+These numbers are invented for the handbook. They show the shape of a leak, not a real result.
+:::
+
+- Task size: 1 vCPU and 2 GB, so the hard limit is 2,048 MiB.
+- Load: flat at 120 requests per second for four hours.
+- Memory: about 1,020 MiB after the first 15 minutes, and about 1,640 MiB after four hours.
+
+The line rises by about 165 MiB an hour under flat load (620 MiB over 3.75 hours). At that rate it reaches the 2,048 MiB limit in roughly two and a half more hours. That is a reason to profile the code now.
+
+## Do this
+
+- Keep the load and duration the same between runs, so the trend is comparable.
+- Note the task ID and start time. A restarted task starts the line again.
+- Record the release version next to every soak run.
+- Give the soak test its own staging window, so it does not disturb other tests.
+
+## Avoid this
+
+- Treating a flat line after a short test as proof that there is no leak.
+- Raising the task memory as the first fix. It hides the growth and makes the next failure later and bigger.
+- Reading a single memory sample as a trend.
+
+## Further reading
+
+- [AWS: Task definition parameters for Fargate](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html) (checked 2026-11-06, for the memory hard-limit wording)

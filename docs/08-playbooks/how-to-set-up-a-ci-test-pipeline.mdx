@@ -1,0 +1,63 @@
+---
+title: How to set up a CI test pipeline
+sidebar_position: 48.3
+description: A numbered checklist for building a CI test pipeline with lint, unit, API, UI smoke and performance gate stages.
+part: 8
+summary: Step-by-step checklist for a staged CI pipeline that fails fast and reports clearly.
+tags: [playbook, checklist, ci, pipeline]
+reading_time: 5
+related: ["/automation-engineering/ci-cd-and-continuous-testing", "/automation-engineering/parallel-and-distributed-execution", "/automation-engineering/reporting-and-logging"]
+---
+
+<TLDR>
+Order the stages from fastest and cheapest to slowest. Stop at the first failure. Cache what is slow to build, publish reports so failures are easy to read, and keep the slowest checks for fewer runs. The ideas are in [CI/CD and continuous testing](/automation-engineering/ci-cd-and-continuous-testing).
+</TLDR>
+
+## Checklist
+
+1. **List the stages.** Lint, unit, API, UI smoke, then a performance gate.
+2. **Order by cost.** Cheap and fast first, so most mistakes fail in under a minute.
+3. **Fail fast.** Make each stage depend on the one before it.
+4. **Cache dependencies.** Cache the package download folder, keyed on the lock file.
+5. **Start the app in the job.** Use a fresh database for the API and UI stages.
+6. **Run tests in parallel** where tests are independent. See [parallel and distributed execution](/automation-engineering/parallel-and-distributed-execution).
+7. **Publish reports.** Upload test results and, for the UI stage, screenshots or traces on failure. See [reporting and logging](/automation-engineering/reporting-and-logging).
+8. **Set the performance gate.** Run a short load test with a p95 and an error-rate limit. See [performance strategy and CI](/performance-fundamentals/performance-strategy-and-ci).
+9. **Keep the pipeline fast.** Set a time budget per stage and review it monthly.
+10. **Handle flaky tests.** Quarantine them outside the blocking path. See [how to triage a flaky test](/playbooks/how-to-triage-a-flaky-test).
+
+**Recommendation.** Keep the fast checks, such as lint and unit tests, under about 10 minutes, so developers get feedback while the change is still fresh in their minds. Run the slow load test on a schedule, such as nightly, instead of on every pull request. Store test reports, and screenshots from failed UI runs, as build artefacts, so people can read them after the run has ended.
+
+## Example: GitHub Actions for TaskFlow
+
+Not run here. It is a sketch to adapt.
+
+```yaml
+name: tests
+on: [pull_request]
+jobs:
+  lint-unit-api:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: examples/taskflow } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12", cache: pip }
+      - run: pip install -r requirements-dev.txt
+      - run: python -m pyflakes app tests   # lint stage (pyflakes is an extra install)
+      - run: pytest -q                      # unit and API tests
+  perf-gate:
+    needs: lint-unit-api
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "start API, then run the SLO gate script"
+```
+
+The UI smoke stage would sit between the two jobs. The SLO gate script is `examples/taskflow/loadtest/test_slo_gate.py`.
+
+## Done when
+
+- A bad commit fails at the earliest possible stage.
+- A failed run shows the failing test and its evidence without opening the logs.
+- The full pipeline fits the time budget you set.
+- A second run with unchanged dependencies uses the cache.

@@ -1,0 +1,81 @@
+---
+title: Self-healing tests
+sidebar_position: 75
+description: What self-healing tests do, why they can hide real bugs, and how to choose stable locators first.
+part: 13
+summary: Self-healing repairs broken locators. Use stable locators first, and log every automatic repair.
+tags: [ai, self-healing, locators, maintenance]
+reading_time: 6
+related: ["/ai-in-testing/browser-agents", "/automation-engineering/maintaining-automation", "/testing-by-layer/ui-testing", "/automation-engineering/flaky-tests"]
+---
+
+<TLDR>
+Self-healing tests try a different way to find an element when the first way fails. A fallback can keep a suite green while the feature is broken. Pick stable locators first, and make every automatic repair visible in a report that a human reviews.
+</TLDR>
+
+## What and why
+
+A UI test finds elements with locators, such as a button's label or a CSS path. When a developer renames a label or moves a button, the locator breaks. The test fails, even though the feature still works. This is a maintenance cost, and it is one reason teams drop UI tests.
+
+Self-healing is a response to that cost. When a locator fails, the tool tries alternatives. Some tools also ask a model to suggest a new locator. Stagehand's docs describe `act()` as self-healing when a site changes. Those are vendor claims. We did not measure how often they work.
+
+## How it works
+
+Most self-healing setups follow these steps:
+
+1. The primary locator fails.
+2. The tool tries fallback locators, such as a text match or a position in the page.
+3. If one matches, the step continues and the tool may update the stored locator.
+4. Some tools ask a model for a new locator when all fallbacks fail.
+
+Step 3 is the risk. The test passes, and nobody sees that a repair happened.
+
+## Stable locators come first
+
+A stable locator describes what the user sees: the role and the accessible name. Playwright's `get_by_role` works this way. It is the cheapest form of "healing", because it does not break when the layout changes.
+
+```python
+# Stable: role and accessible name
+page.get_by_role("button", name="Create task").click()
+
+# Fragile: depends on page layout
+page.locator("div.card > button:nth-child(3)").click()
+```
+
+Use test IDs for elements that have no clear name. Keep them in the app code and agree on the naming with developers.
+
+## When to use it (and when not to)
+
+| Use it when | Skip it when |
+|---|---|
+| A stable locator exists but the UI changes often | The change is a real behaviour change that the test should catch |
+| Every repair is logged and reviewed in a pull request | Repairs happen silently in CI |
+| The test covers a low-risk, non-critical path | The test guards a money, security or access rule |
+
+## TaskFlow example
+
+The TaskFlow UI has a "Create task" action. A test that uses the role and name keeps working if the button moves. A test that uses a position in the page breaks on any layout change. Both fail if the button is removed, which is the right result.
+
+Now the bad case. Suppose a fallback finds the "Assign" button when the real check is on the "Create task" flow. The test passes, but the rule it guards is not checked. The fix is to keep a repair log and fail the test when the fallback is used on a rule-based check. The API tests in [API testing](/testing-by-layer/api-testing) do not have this problem, because they do not use locators.
+
+## Do this
+
+- Use role, label or test-ID locators by default.
+- Log every fallback or repair with the old and new locator, and show the log in the test report.
+- Review repairs in a pull request, like any other code change.
+- Fail the build on repairs for critical flows, or require a human sign-off.
+- Track how often repairs happen. A rising count means the app is changing faster than the tests.
+
+## Avoid this
+
+- Turning self-healing on for the whole suite and never looking at the logs.
+- Letting a model rewrite a locator and merging the change without reading it.
+- Using self-healing to hide flaky tests. Find the cause first ([Flaky tests](/automation-engineering/flaky-tests)).
+
+:::tip[Recommendation]
+Fix the locator strategy before you buy a self-healing tool. Most maintenance cost comes from fragile locators, not from missing AI.
+:::
+
+## Further reading
+
+- [Playwright repository](https://github.com/microsoft/playwright). Apache-2.0, latest release v1.65.0 (2026-11-05), as of 2026-11-06. Locator APIs are in its docs.

@@ -1,0 +1,76 @@
+---
+title: Performance requirements, SLOs and baselines
+sidebar_position: 51
+description: How to turn "it must be fast" into a measurable SLO, and how to keep a baseline to compare against.
+part: 9
+summary: Turn vague speed goals into SLOs, error budgets and baselines that a test can check.
+tags: [performance, slo, sli, baseline, error-budget]
+reading_time: 6
+related: ["/performance-fundamentals/performance-metrics", "/performance-fundamentals/workload-modelling", "/performance-by-layer/backend-api-performance"]
+---
+
+<TLDR>
+"It must be fast" cannot fail a test. A service level objective (SLO) gives a number, a percentile, a load level and a time window, so a test can pass or fail. A baseline is a recorded result from a known-good run that later runs compare against.
+</TLDR>
+
+## What and why
+
+A **service level indicator (SLI)** is something you measure, such as p95 response time for one endpoint. A **service level objective (SLO)** is the target for that measure, such as "p95 under 500 ms". A **service level agreement (SLA)** is the promise made to customers, often with penalties. SLOs are internal targets. SLAs are external promises.
+
+An SLO has four parts:
+
+1. **The measure:** p95 latency, or error rate.
+2. **The scope:** which endpoint or user journey.
+3. **The load:** how many requests per second the target applies to.
+4. **The window:** over which period the target is judged, such as 5 minutes.
+
+Without the load and the window, a result has no clear meaning.
+
+**Error budget** is the failure the SLO allows. An error rate target of 1% over 1,000,000 requests allows 10,000 failed requests in that period. Spending the budget is a signal to slow down changes.
+
+## How it works
+
+A **baseline** is a recorded run on a known setup: the same data, script version, environment and load profile. Each new run compares against it. A change of more than an agreed amount is a regression to investigate.
+
+Store the baseline with the test results. Keep at least these fields:
+
+| Field | Example |
+|---|---|
+| Build or version | Commit hash of the TaskFlow API |
+| Environment | Local laptop, or a named test stack |
+| Data volume | Number of tasks in the database |
+| Load profile | 10 users, 2 per second spawn rate, 1 minute |
+| Results | p50, p95, p99, RPS, error rate |
+
+## TaskFlow example
+
+These targets are a **Recommendation** for illustration. Set your own from what users and the business need.
+
+| Endpoint | SLI | Example SLO | Load and window |
+|---|---|---|---|
+| `GET /api/tasks/{id}` | p95 latency | under 300 ms | 50 requests per second, 5-minute window |
+| `POST /api/tasks` | p95 latency | under 500 ms | 20 requests per second, 5-minute window |
+| All TaskFlow endpoints | Error rate | under 1% | Same as above |
+
+The local gate in [Hands-on: Locust with pytest](/load-testing-tools/locust-with-pytest) uses a p95 of 500 ms and a 1% error rate as defaults. Those defaults are a smoke-test check on a laptop. They are not production targets. The k6 script in [Hands-on: k6](/load-testing-tools/k6) uses the same idea with per-endpoint thresholds.
+
+## When to use it (and when not to)
+
+| Use it when | Skip it when |
+|---|---|
+| A feature has users who will notice slowness | An internal script runs once a month and nobody waits on it |
+| You plan to release and want a pass or fail | You have no load profile yet. Build one first ([workload modelling](/performance-fundamentals/workload-modelling)) |
+| You compare releases over time | The environment changed a lot since the last baseline. Record a new one |
+
+## Do this
+
+- Write each SLO with a percentile, a load level and a window.
+- Record a baseline after each accepted release, with its setup details.
+- Keep thresholds in version control, next to the test script.
+- Agree on SLOs with the product owner. Label your first draft as a Recommendation.
+
+## Avoid this
+
+- Writing "fast" or "responsive" with no number.
+- Comparing a new run with a baseline from a different environment or data size.
+- Copying a target from a vendor's marketing page without checking it against your users.

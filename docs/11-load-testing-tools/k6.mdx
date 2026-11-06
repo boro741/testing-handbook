@@ -1,0 +1,95 @@
+---
+title: "Hands-on: k6"
+sidebar_position: 62
+description: Write a k6 smoke test for TaskFlow with per-endpoint thresholds, and run it from the command line.
+part: 11
+summary: A k6 script with thresholds per endpoint. Thresholds decide pass or fail, not checks.
+tags: [performance, k6, javascript, thresholds, load-testing, hands-on]
+reading_time: 7
+related: ["/load-testing-tools/choosing-a-tool", "/load-testing-tools/locust-with-pytest", "/performance-fundamentals/performance-requirements-and-slos"]
+---
+
+<TLDR>
+k6 is a load tool that runs JavaScript test scripts. In k6, thresholds decide whether a run passes. Checks alone do not. The TaskFlow smoke script in `examples/taskflow/loadtest/k6-smoke.js` tags each request by endpoint, so each one gets its own threshold.
+</TLDR>
+
+## What and why
+
+k6 is an open-source load tool with a JavaScript test API. Each virtual user runs your `default` function, over and over, for the test's duration. See the [k6 repository](https://github.com/grafana/k6) (AGPL-3.0 licence).
+
+Two ideas matter in k6:
+
+- **Checks** assert things about a response, such as its status. A failed check is recorded, but it does not stop the run. k6's docs say checks "do not affect the exit status of k6".
+- **Thresholds** set pass or fail rules on metrics, such as `http_req_duration` or `http_req_failed`. When a threshold breaks, the test "finishes with a failed status" and exits with a non-zero code.
+
+Use checks to find problems, and thresholds to decide the result.
+
+## How it works
+
+Thresholds can filter by tag. Tag a request in its params, and the threshold applies to that tag only. This is how the script gives each endpoint its own latency limit:
+
+```javascript
+export const options = {
+  vus: 2,
+  duration: '30s',
+  thresholds: {
+    http_req_failed: ['rate<0.01'],
+    checks: ['rate>0.99'],
+    'http_req_duration{endpoint:login}': ['p(95)<500'],
+    'http_req_duration{endpoint:get_task}': ['p(95)<300'],
+    'http_req_duration{endpoint:list_tasks}': ['p(95)<500'],
+  },
+};
+
+// A tagged request. The tag feeds the threshold above.
+const read = http.get(`${BASE_URL}/api/tasks/${taskId}`, {
+  headers: auth,
+  tags: { endpoint: 'get_task' },
+});
+```
+
+k6 also supports `abortOnFail` on a threshold. The docs use it in a breakpoint test, which ramps load until the error rate breaks and then stops.
+
+## When to use it (and when not to)
+
+| Use it when | Skip it when |
+|---|---|
+| Your team writes JavaScript and wants thresholds in the script | The team only writes Python. [Locust with pytest](/load-testing-tools/locust-with-pytest) fits better |
+| You want a CLI run in CI with a clear exit code | You need a full browser user journey. Use [end-to-end testing](/testing-by-layer/end-to-end-testing) |
+| You plan a breakpoint or ramp test | You need distributed runs on one machine. Read [distributed load and dashboards](/load-testing-tools/distributed-load-and-dashboards) first |
+
+## TaskFlow example
+
+The script `examples/taskflow/loadtest/k6-smoke.js` runs five steps per iteration: log in, create a task, read it, list the project's tasks, and update the priority. Each step has a `check`, and each request has a tag and a threshold.
+
+Run it from `examples/taskflow`, with the API started first:
+
+```bash
+.venv/bin/uvicorn app.main:app --port 8000     # terminal 1
+
+k6 run loadtest/k6-smoke.js                    # terminal 2
+k6 run -e BASE_URL=http://localhost:8000 loadtest/k6-smoke.js
+```
+
+The `-e` flag passes `BASE_URL` to the script as `__ENV.BASE_URL`. It does not set k6 options.
+
+**Status of this run:** k6 is **not installed** on the machine used to write this handbook (`command -v k6` returned nothing on 2026-11-06). The script was checked for JavaScript syntax with Node's parser, and its thresholds and API calls were checked against the k6 docs. It has **not** been run with k6. Install k6, then run the command above yourself.
+
+## Do this
+
+- Tag every request that you want to measure separately, and set a threshold for each tag.
+- Keep `checks` and thresholds both in the script, so the pass rule is visible in code.
+- Keep the smoke test short and small. It checks the basics on each change.
+- Read the end-of-run summary for each threshold, not just the final pass or fail.
+- Use `-e` for values that change between environments, such as the URL.
+
+## Avoid this
+
+- Writing one threshold for all traffic. An average over every endpoint hides a slow one.
+- Assuming a failed check stops the run. It does not, unless a threshold depends on it.
+- Hard-coding passwords in the script. The demo's `alice-pass` is public demo data.
+
+## Further reading
+
+- [k6 on GitHub](https://github.com/grafana/k6). Source and releases.
+- [Run distributed tests](https://grafana.com/docs/k6/latest/testing-guides/running-distributed-tests/), Grafana k6 docs. Checked as of 2026-11-06.

@@ -1,0 +1,234 @@
+---
+title: "Exercises: automation and layers"
+sidebar_position: 97.3
+description: Eight practice exercises on writing, reading and fixing automated tests, and on choosing the right layer for a check, using the local TaskFlow app.
+part: 97
+summary: Write a pytest test, read a failing one, fix a flaky test, sketch a Page Object, pick a layer, outline a contract test, write a Gherkin scenario and decide what to automate.
+tags: [practice, exercises, pytest, automation, layers, flaky-tests, page-object, gherkin, contract-testing]
+reading_time: 7
+related: ["/practice/learning-paths", "/practice/exercises-fundamentals-and-design", "/automation-engineering/test-automation-pyramid"]
+---
+
+<TLDR>
+Eight exercises on automated tests and layers. Code answers were run against the local TaskFlow app.
+</TLDR>
+
+## Running the code answers
+
+Install with `pip install -r examples/taskflow/requirements.txt pytest==8.3.4 httpx==0.28.1`. Run each file from a scratch
+folder, with a throwaway database:
+
+```bash
+DATABASE_URL=sqlite:////tmp/practice.db PYTHONPATH=examples/taskflow pytest -q test_file.py
+```
+
+The answers below were run with Python 3.12, pytest 8.3.4 and httpx 0.28.1. The [TaskFlow reference](/start-here/taskflow-reference) lists the rules.
+
+## Exercise 1: Write a pytest test for a membership rule
+
+**Task:** Write a test: a non-member gets 403 when reading a task. Bob creates a project only he belongs to.
+
+**Hint:** Alice tries to read Bob's task. A fixture that empties the database keeps the test independent.
+
+<details>
+<summary>Show the answer</summary>
+
+```python
+import pytest
+from fastapi.testclient import TestClient
+
+from app.main import Base, TOKENS, app, engine
+
+
+@pytest.fixture()
+def client():
+    Base.metadata.drop_all(engine)
+    TOKENS.clear()
+    with TestClient(app) as c:
+        yield c
+
+
+def login(client, username, password):
+    r = client.post("/api/auth/login", json={"username": username, "password": password})
+    return {"Authorization": f"Bearer {r.json()['token']}"}
+
+
+def test_non_member_gets_403_when_reading_a_task(client):
+    bob = login(client, "bob", "bob-pass")
+    project_id = client.post("/api/projects", headers=bob, json={"name": "Bob only"}).json()["id"]
+    task = client.post("/api/tasks", headers=bob,
+                       json={"title": "Secret", "priority": "LOW", "project_id": project_id}).json()
+    alice = login(client, "alice", "alice-pass")
+    r = client.get(f"/api/tasks/{task['id']}", headers=alice)
+    assert r.status_code == 403
+```
+
+**Run result (real):** `test_non_member_gets_403_when_reading_a_task PASSED`.
+
+</details>
+
+## Exercise 2: Read a failing test and say why
+
+**Task:** This test fails with `assert 409 == 200`. Say whether the app or the test is wrong, using the status rules.
+
+```python
+def test_task_can_go_straight_from_todo_to_done(client):
+    h = login(client, "alice", "alice-pass")
+    task_id = client.post("/api/tasks", headers=h,
+                          json={"title": "Ship it", "priority": "HIGH", "project_id": 1}).json()["id"]
+    r = client.put(f"/api/tasks/{task_id}", headers=h, json={"status": "DONE"})
+    assert r.status_code == 200
+```
+
+**Hint:** A 409 means the app refused a move. Check which moves the status flow allows.
+
+<details>
+<summary>Show the answer</summary>
+
+The test is wrong. The flow allows only `TODO` to `IN_PROGRESS`, so `TODO` to `DONE` must return 409. Running this test on the
+local app gives the same failure. Fix the test: expect 409, or walk through `IN_PROGRESS` and `IN_REVIEW` first.
+
+</details>
+
+## Exercise 3: Fix a flaky test (describe the cause, no code)
+
+**Task:** `test_demo_project_starts_empty` asserts that project 1 has no tasks. It passes alone and fails after
+`test_assign_a_member_works`, because someone removed the database reset from the fixture. Explain the cause and the fix.
+
+**Hint:** Ask what state the test depends on, and who else writes to it.
+
+<details>
+<summary>Show the answer</summary>
+
+**Cause:** The test assumes the shared Demo project is empty. Other tests add tasks there, and the reset no longer clears them.
+The result depends on test order, so the test is flaky.
+
+**Fix:** Create a fresh project in the test and assert only on its list. Restore the reset too. A retry or a sleep would hide the problem.
+
+</details>
+
+## Exercise 4: Sketch a Page Object
+
+**Task:** Sketch a Page Object for TaskFlow's login and task actions, and add one test that uses it. A browser version would wrap
+UI locators. This sketch wraps the API, because the venv has no browser driver.
+
+**Hint:** Keep the HTTP calls inside the class.
+
+<details>
+<summary>Show the answer</summary>
+
+```python
+class TaskFlowApi:
+    """Page-object style wrapper: tests say what they do, not how HTTP works."""
+
+    def __init__(self, client):
+        self.client = client
+        self.headers = {}
+
+    def log_in(self, username, password):
+        r = self.client.post("/api/auth/login", json={"username": username, "password": password})
+        r.raise_for_status()
+        self.headers = {"Authorization": f"Bearer {r.json()['token']}"}
+        return self
+
+    def create_task(self, title, priority="MEDIUM", project_id=1):
+        return self.client.post("/api/tasks", headers=self.headers,
+                                json={"title": title, "priority": priority, "project_id": project_id})
+
+    def set_status(self, task_id, status):
+        return self.client.put(f"/api/tasks/{task_id}", headers=self.headers, json={"status": status})
+```
+
+```python
+def test_task_moves_from_todo_to_in_progress(client):
+    api = TaskFlowApi(client).log_in("alice", "alice-pass")
+    task_id = api.create_task("Write tests").json()["id"]
+    r = api.set_status(task_id, "IN_PROGRESS")
+    assert r.status_code == 200
+    assert r.json()["status"] == "IN_PROGRESS"
+```
+
+**Run result (real):** `test_task_moves_from_todo_to_in_progress PASSED`, in a file with the Exercise 1 fixture.
+
+</details>
+
+## Exercise 5: Choose the layer for each bug
+
+**Task:** Name the layer for each bug, and the cheapest check that catches it: (a) a 101-character title is saved; (b) Save does
+nothing in one browser, but the API works; (c) a project's task list shows another project's tasks; (d) an `IN_REVIEW` task has
+the wrong colour.
+
+**Hint:** Ask where the rule lives.
+
+<details>
+<summary>Show the answer</summary>
+
+- **(a) API.** The title limit lives in the request model. An API boundary test catches it.
+- **(b) UI.** The API works, so only a UI test in that browser catches it.
+- **(c) API.** The list filters by project. An API test with tasks in two projects catches it.
+- **(d) UI.** Colour is presentation. A visual or UI check catches it.
+
+Put each check at the lowest layer that can see the fault.
+
+</details>
+
+## Exercise 6: Outline a contract test
+
+**Task:** The web app creates tasks with `POST /api/tasks`. Outline a contract test that protects it from response changes.
+
+**Hint:** List the fields and status codes the web app relies on.
+
+<details>
+<summary>Show the answer</summary>
+
+This is an idea, not code. On the running app, a create returns the keys `assignee_id`, `id`, `priority`, `project_id`,
+`status` and `title`.
+
+The web team writes the expectations: 201 on a valid create, those keys, `status` `TODO`, and 422 for a bad priority. The API
+team runs them as a provider check on each build, so a renamed field fails before release. Keep the contract small. Pact is one
+tool for this. The repo's Pact example in `examples/taskflow/contract/` was not run here.
+
+</details>
+
+## Exercise 7: Write a Gherkin scenario for assignment
+
+**Task:** Write a Gherkin scenario for this rule: a task can be assigned only to a project member.
+
+**Hint:** Reuse the steps of the repository feature file. Check the status and the assignee in the Then steps.
+
+<details>
+<summary>Show the answer</summary>
+
+```gherkin
+Scenario: Assign a task to someone who is not a member of the project
+  Given alice is logged in
+  And a task exists in a project that only alice belongs to
+  When alice assigns the task to bob
+  Then the response status is 422
+  And the task has no assignee
+```
+
+This matches the scenario in `examples/taskflow/bdd/assign_task.feature`. I installed `pytest-bdd==9.0.1` and ran
+`pytest bdd -q` from `examples/taskflow/`. Result: `2 passed`, covering both scenarios in the file.
+
+</details>
+
+## Exercise 8: Decide what to automate
+
+**Task:** Decide whether to automate each check: (1) title boundaries; (2) a non-member assignee is rejected; (3) the full
+status path from `TODO` to `DONE`; (4) the login page looks right on a phone; (5) a one-off check of release note text;
+(6) exploring how the status flow feels with two users.
+
+**Hint:** Automate fast, repeatable checks with a clear expected result.
+
+<details>
+<summary>Show the answer</summary>
+
+1. **Automate.** Fast, clear, and the rule changes often.
+2. **Automate.** A fixed expected status (422). A regression is costly.
+3. **Automate.** Slow and error-prone to repeat by hand.
+4. **Keep manual for now.** A human eye judges looks. Visual checks can come later.
+5. **Keep manual.** A one-off costs more to automate than it saves.
+6. **Keep manual.** Exploration is judgement. Automate a fixed check that came out of a session, not the session.
+
+</details>

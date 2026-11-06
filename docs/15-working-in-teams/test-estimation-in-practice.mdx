@@ -1,0 +1,106 @@
+---
+title: Test estimation in practice
+sidebar_position: 15.2
+description: How to estimate testing work by feature, use three-point estimates, state buffers openly and explain the result to a product owner.
+part: 15
+summary: Break testing into feature-sized pieces, estimate best, likely and worst cases, and show any buffer as a separate line.
+tags: [estimation, planning, test-effort, three-point-estimate, product-owner]
+reading_time: 6
+related: [/working-in-teams/testing-in-agile-teams, /working-in-teams/bug-triage-meetings, /planning-strategy/risk-based-testing, /planning-strategy/test-strategy-vs-plan]
+---
+
+<TLDR>
+Estimate testing by feature, not with one guess for the whole release. For each piece, give a best, likely and worst case, and calculate an expected value. Show any buffer on its own line and say what it covers. An estimate is a range with reasons, not a promise.
+</TLDR>
+
+## What and why
+
+An estimate is a judgement about how much work something will take. Testing estimates often go wrong because testers are asked for one number, early, with little information. The number then becomes a promise. When the work takes longer, the tester looks slow, even when the real problem was unclear scope.
+
+A better way is to split the testing work into small parts, give each part a range, and state the assumptions. Use this approach when a product owner needs a date or a scope choice. For a tiny change the team has tested many times, a single line is enough.
+
+## How to break the work down
+
+Start from the features, not from the test types. For each feature, list the test work as separate lines, such as:
+
+- happy-path checks
+- negative and edge cases (see [Negative and edge-case testing](/test-design/negative-and-edge-cases))
+- exploratory testing of the changed area
+- test data and environment setup
+- adding the checks to the automated suite
+
+The [Estimation worksheet](/templates/estimation-worksheet) gives these lines as columns, so each row carries its own values. Use one unit for every row, usually hours.
+
+## Three-point estimates
+
+For each line, ask three questions:
+
+- **Best:** everything goes right, and nothing new is found.
+- **Likely:** the normal case, with the usual small surprises.
+- **Worst:** a known risk happens, such as a blocked environment or a changed rule.
+
+A common formula, known as PERT, turns the three values into one expected value:
+
+Expected = (best + 4 × likely + worst) ÷ 6
+
+The likely value gets the most weight, but the best and worst cases still count. Add the expected values to get the feature total, and add the best and worst totals too, so the range is visible.
+
+## Buffers, stated openly
+
+A buffer is time kept back for unknown problems. Some teams hide buffer inside each line, which makes the estimate hard to check. Put it on its own line instead, with a percentage and a reason, such as "20 percent for unknown environment problems." If the product owner wants less buffer, the team can then see exactly what risk is being removed.
+
+## How to explain it to a product owner
+
+Lead with the range, then the reasons:
+
+1. The expected effort is X hours, and the range runs from the best case to the worst case.
+2. The widest lines have the most unknowns. Name them.
+3. Say what would make the estimate smaller, and what would make it larger.
+4. Offer options, such as moving one part to the next sprint, or accepting more risk in a named area.
+
+
+## TaskFlow example: the assign task feature
+
+:::info[Illustrative data]
+Every number in this example is made up for teaching. None of them are measurements.
+:::
+
+The feature is "assign a task to a project member". The local API has one endpoint for it, `POST /api/tasks/{id}/assign`, which takes a user ID. The caller must be a member of the task's project (403 otherwise). The assignee must also be a member of that project (422 otherwise).
+
+The tester breaks the work into eight lines. Values are in hours:
+
+| Line | Best | Likely | Worst | Expected |
+|---|---|---|---|---|
+| Assign a project member (happy path) | 0.5 | 1 | 2 | 1.1 |
+| Assign a non-member (422) | 0.5 | 1 | 2 | 1.1 |
+| Caller is not a member (403) | 0.5 | 1 | 1.5 | 1.0 |
+| Missing token and unknown task (401, 404) | 0.5 | 1 | 2 | 1.1 |
+| Reassign and bad body (422 validation) | 0.5 | 1 | 2 | 1.1 |
+| Exploratory session on the feature | 1 | 2 | 4 | 2.2 |
+| Test data and environment setup | 1 | 2 | 4 | 2.2 |
+| Add the checks to the automated suite | 2 | 3 | 6 | 3.3 |
+| **Total** | **6.5** | **12** | **23.5** | **13.0** |
+
+The expected values are rounded to one decimal place, so the column does not add to exactly 13.0 by hand.
+
+The buffer is a separate line: 20 percent of 13.0 hours, which is 2.6 hours. The total with buffer is 15.6 hours.
+
+The tester might say to the product owner: "We expect about 13 hours of testing, plus a 2.6-hour buffer for environment problems. Without the buffer, the range is 6.5 to 23.5 hours. The automation line is the widest. If we move it to the next sprint, the expected total drops to about 10 hours." The product owner can then choose between the date and the automation work.
+
+## Do this
+
+- Estimate by feature, then by test type.
+- Give every line a best, likely and worst value.
+- Show the buffer on its own line, with a reason.
+- Re-estimate when scope changes, and say what changed.
+
+## Avoid this
+
+- Giving one number and calling it a promise.
+- Hiding buffer inside other lines.
+- Estimating testing as a fixed share of the development estimate, without looking at the work.
+
+## Further reading
+
+- [Testing in agile teams](/working-in-teams/testing-in-agile-teams) explains where this work happens inside a sprint.
+- [Risk-based testing](/planning-strategy/risk-based-testing) helps decide which lines deserve more time.

@@ -1,0 +1,16 @@
+$kind: http-request
+id: 0bcf9d85e68f40566c93e666
+name: 5 Create without token
+method: POST
+url: '{{baseUrl}}/api/tasks'
+body:
+  type: json
+  content: '{"title":"x","priority":"LOW","project_id":1}'
+headers:
+  - key: Content-Type
+    value: application/json
+scripts:
+  - type: afterResponse
+    code: |
+      pm.test("no token returns 401", () => pm.response.to.have.status(401));
+    language: text/javascript

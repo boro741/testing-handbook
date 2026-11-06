@@ -1,0 +1,39 @@
+---
+title: How to test a mobile app release
+sidebar_position: 48.4
+description: A numbered checklist for testing a mobile app release candidate, from the device matrix to store checks and rollback.
+part: 8
+summary: "Step-by-step checklist for a mobile release: devices, install and upgrade, permissions, network, store checks and rollback."
+tags: [playbook, checklist, mobile, release]
+reading_time: 5
+related: ["/testing-by-layer/mobile-app-testing", "/testing-by-layer/device-farms-and-real-devices", "/other-non-functional/compatibility-testing"]
+---
+
+<TLDR>
+A mobile release cannot be fixed on the server alone. Users must update the app. So test the build you will submit, on the devices your users have, including the upgrade from the last version. Know how you will roll back before you ship. See [mobile app testing](/testing-by-layer/mobile-app-testing).
+</TLDR>
+
+## Checklist
+
+1. **Build the device matrix.** Pick devices and OS versions from your own usage data. Cover the oldest supported OS, the newest, one small screen and one large. See [device farms and real devices](/testing-by-layer/device-farms-and-real-devices).
+2. **Test the release build.** Use the signed candidate, not a debug build.
+3. **Fresh install.** First launch, login, onboarding.
+4. **Upgrade.** Install the previous version, add data, then upgrade. Data and login must survive.
+5. **Permissions.** Test allow, deny and "ask later" for each permission. Also test turning one off in system settings.
+6. **Network.** Test slow, offline, and a switch from Wi-Fi to mobile data. Check retries and error messages.
+7. **Interrupts.** A call, a notification, background and return, low battery, rotation.
+8. **Critical journeys.** Log in, create a task, assign it, change its status.
+9. **Store checks.** Version and build number, icons, screenshots, privacy details and the review rules of each store.
+10. **Plan the rollback.** Decide the staged rollout steps, the metrics to watch, and who can halt it. Keep the previous build available.
+11. **Watch after release.** Check crash and error rates at each rollout step. See [compatibility testing](/other-non-functional/compatibility-testing).
+
+## Example: the upgrade path
+
+For TaskFlow mobile, install the last released version, log in as `alice`, and create two tasks. Upgrade to the candidate. Check that the session is still valid or that a clean login works, and that both tasks appear. Then repeat with the app killed during the upgrade.
+
+## Done when
+
+- Every device in the matrix passed the critical journeys.
+- The upgrade from the previous version kept data.
+- Store requirements are checked and the listing is ready.
+- The rollout steps, the metrics to watch and the halt owner are written down.

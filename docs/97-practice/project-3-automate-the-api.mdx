@@ -1,0 +1,259 @@
+---
+title: "Project 3: automate the API"
+sidebar_position: 97.10
+description: "Write pytest tests for the TaskFlow login, task, status and membership rules, run them on the bug-free app, then switch on the seeded bugs and explain each failure."
+part: 97
+summary: "Turn the API rules into pytest tests, run them on the bug-free app, then turn on the bug switch and say which tests fail and why."
+tags: [practice, project, pytest, api-testing, httpx, boundary-values]
+reading_time: 12
+related: ["/practice/project-overview", "/practice/project-4-automate-the-ui", "/practice/exercises-automation-and-layers", "/start-here/taskflow-reference"]
+---
+
+<TLDR>
+You write pytest tests for the TaskFlow API. The tests cover login, task title and priority rules, the status flow and project membership. You run them on the bug-free app first. Then you turn on the bug switch and explain every test that fails. You are checking the app against the rules, so the rules come from the reference page, not from the code.
+</TLDR>
+
+## What and why
+
+An API test sends a request and checks the status code and the body. Here you turn the TaskFlow rules into tests. If the app breaks a rule, your test should fail. Do not change the test to match the app, and do not change `app/main.py`.
+
+## Before you start
+
+Set up the project from `examples/taskflow/`:
+
+```bash
+cd examples/taskflow
+python3 -m venv .venv && . .venv/bin/activate
+pip install -r requirements-dev.txt
+pytest -q tests
+```
+
+The last command runs the existing API tests in `tests/`. On the bug-free app they should all pass. If they do not, stop and fix your setup before you go on.
+
+Read the rules on the [TaskFlow reference](/start-here/taskflow-reference) page. Write down the rule behind each status code you test.
+
+The existing tests use FastAPI's `TestClient`, which sends requests through httpx. Copy the `client` fixture and the `login` helper from `tests/test_taskflow_api.py`.
+
+## Steps
+
+**Step 1: Write the login and create-task tests.** Make a new file, `tests/test_my_api.py`. Start with the login rule. Test a correct login, a wrong password, an unknown user and a missing token. Then test the title rule with four lengths: 0, 1, 100 and 101 characters. Use `@pytest.mark.parametrize` so one test covers all four lengths. Add a test for each allowed priority and for values that are not allowed.
+
+**Step 2: Write the status-flow tests.** Test the full allowed path, one step at a time. Then test two moves the rules forbid, for example skipping a step. Check the status code and the returned `status` value.
+
+**Step 3: Write the membership tests.** Create a project that only bob belongs to, as in `test_non_member_cannot_create_task_in_project`. Then test what alice can and cannot do with that project: create a task, read a task, list tasks, and assign a user. Also check that a deleted task returns 404.
+
+**Step 4: Run on the bug-free app.** Run `pytest -q tests/test_my_api.py`. Every test should pass. If one fails, the test is usually wrong. Fix the test.
+
+**Step 5: Turn the bugs on and record the failures.** Only now, run `TASKFLOW_BUGS=all pytest -q tests/test_my_api.py`. The app reads the switch on every request. Make a table with four columns: test name, status code you got, status code the rule says, and one sentence on what the app did. Explain each failure in your own words. Do not guess. If a test fails for a reason you cannot explain, say so.
+
+The notes in `examples/taskflow/bug-hunt/README.md` explain the switch. They do not say what is wrong.
+
+## Test ideas checklist
+
+Use this list to check your coverage. Tick an item when a test covers it.
+
+- [ ] A correct login returns a token and a user id.
+- [ ] A wrong password for each demo user returns 401.
+- [ ] An unknown username returns 401.
+- [ ] An empty password returns 401.
+- [ ] A request with no token returns 401.
+- [ ] A request with an unknown token returns 401.
+- [ ] Title lengths 0, 1, 100 and 101 return 422, 201, 201 and 422.
+- [ ] Priorities LOW, MEDIUM and HIGH are accepted.
+- [ ] Priorities such as "URGENT", "low" and an empty string return 422.
+- [ ] A new task starts in TODO.
+- [ ] The full allowed path returns 200 at every step.
+- [ ] A skipped step (TODO to DONE) returns 409.
+- [ ] A backwards move (DONE to TODO) returns 409.
+- [ ] A non-member gets 403 when creating, reading and listing tasks.
+- [ ] Assigning a non-member returns 422.
+- [ ] A deleted task returns 404 when you read it again.
+- [ ] A list for one project does not include tasks from another project.
+
+## Model test file
+
+Try your own file first. This model is for checking your work after step 4. It passes on the bug-free app.
+
+<details>
+<summary>Show the model test file</summary>
+
+```python
+"""My API tests for TaskFlow. Run from examples/taskflow with: pytest -q tests/test_my_api.py"""
+import pytest
+from fastapi.testclient import TestClient
+
+from app.main import app
+
+
+@pytest.fixture()
+def client():
+    from app.main import Base, engine, TOKENS
+    Base.metadata.drop_all(engine)
+    TOKENS.clear()
+    with TestClient(app) as c:
+        yield c
+
+
+def login(client, username="alice", password="alice-pass"):
+    r = client.post("/api/auth/login", json={"username": username, "password": password})
+    assert r.status_code == 200, r.text
+    return {"Authorization": f"Bearer {r.json()['token']}"}
+
+
+def new_task(client, headers, title="Write tests", priority="MEDIUM", project_id=1):
+    return client.post("/api/tasks", headers=headers,
+                       json={"title": title, "priority": priority, "project_id": project_id})
+
+
+def make_task(client, headers, status):
+    """Create a task and move it along the allowed path to the given status."""
+    task_id = new_task(client, headers).json()["id"]
+    path = {"TODO": [], "IN_PROGRESS": ["IN_PROGRESS"], "IN_REVIEW": ["IN_PROGRESS", "IN_REVIEW"],
+            "DONE": ["IN_PROGRESS", "IN_REVIEW", "DONE"]}[status]
+    for step in path:
+        assert client.put(f"/api/tasks/{task_id}", headers=headers,
+                          json={"status": step}).status_code == 200
+    return task_id
+
+
+# --- login ------------------------------------------------------------------
+
+def test_login_returns_token_and_user_id(client):
+    r = client.post("/api/auth/login", json={"username": "alice", "password": "alice-pass"})
+    assert r.status_code == 200
+    assert r.json()["token"]
+    assert r.json()["user_id"] == 1
+
+
+@pytest.mark.parametrize("username, password", [
+    ("alice", "wrong"),
+    ("alice", ""),
+    ("nobody", "alice-pass"),
+    ("bob", "not-bobs-password"),
+])
+def test_login_with_bad_credentials_is_401(client, username, password):
+    r = client.post("/api/auth/login", json={"username": username, "password": password})
+    assert r.status_code == 401
+
+
+def test_request_with_unknown_token_is_401(client):
+    r = client.post("/api/tasks", headers={"Authorization": "Bearer not-a-token"},
+                    json={"title": "x", "priority": "LOW", "project_id": 1})
+    assert r.status_code == 401
+
+
+# --- create task: title and priority -------------------------------------------
+
+@pytest.mark.parametrize("length, expected", [(0, 422), (1, 201), (100, 201), (101, 422)])
+def test_title_length_boundaries(client, length, expected):
+    r = new_task(client, login(client), title="a" * length)
+    assert r.status_code == expected, r.text
+
+
+@pytest.mark.parametrize("priority", ["LOW", "MEDIUM", "HIGH"])
+def test_each_allowed_priority_is_accepted(client, priority):
+    assert new_task(client, login(client), priority=priority).status_code == 201
+
+
+@pytest.mark.parametrize("priority", ["URGENT", "low", "", "medium"])
+def test_other_priorities_are_422(client, priority):
+    assert new_task(client, login(client), priority=priority).status_code == 422
+
+
+def test_new_task_starts_in_todo(client):
+    r = new_task(client, login(client))
+    assert r.status_code == 201
+    assert r.json()["status"] == "TODO"
+
+
+# --- status flow ----------------------------------------------------------------
+
+def test_full_allowed_path_returns_200_each_step(client):
+    h = login(client)
+    task_id = new_task(client, h).json()["id"]
+    for status in ["IN_PROGRESS", "IN_REVIEW", "DONE", "REOPENED", "IN_PROGRESS"]:
+        r = client.put(f"/api/tasks/{task_id}", headers=h, json={"status": status})
+        assert r.status_code == 200, r.text
+        assert r.json()["status"] == status
+
+
+@pytest.mark.parametrize("start, target", [
+    ("TODO", "DONE"),
+    ("TODO", "IN_REVIEW"),
+    ("IN_PROGRESS", "DONE"),
+    ("DONE", "TODO"),
+])
+def test_skipping_or_going_backwards_is_409(client, start, target):
+    h = login(client)
+    task_id = make_task(client, h, start)
+    r = client.put(f"/api/tasks/{task_id}", headers=h, json={"status": target})
+    assert r.status_code == 409, r.text
+
+
+# --- membership -------------------------------------------------------------------
+
+def make_bob_only_project(client):
+    bob = login(client, "bob", "bob-pass")
+    project_id = client.post("/api/projects", headers=bob, json={"name": "Bob only"}).json()["id"]
+    task_id = new_task(client, bob, project_id=project_id).json()["id"]
+    return bob, project_id, task_id
+
+
+def test_non_member_cannot_create_task(client):
+    _, project_id, _ = make_bob_only_project(client)
+    r = new_task(client, login(client), project_id=project_id)
+    assert r.status_code == 403
+
+
+def test_non_member_cannot_read_task(client):
+    _, _, task_id = make_bob_only_project(client)
+    r = client.get(f"/api/tasks/{task_id}", headers=login(client))
+    assert r.status_code == 403
+
+
+def test_non_member_cannot_list_project_tasks(client):
+    _, project_id, _ = make_bob_only_project(client)
+    r = client.get("/api/tasks", headers=login(client), params={"project_id": project_id})
+    assert r.status_code == 403
+
+
+def test_assigning_a_non_member_is_422(client):
+    h = login(client)
+    solo = client.post("/api/projects", headers=h, json={"name": "Solo"}).json()["id"]
+    task_id = new_task(client, h, project_id=solo).json()["id"]
+    r = client.post(f"/api/tasks/{task_id}/assign", headers=h, json={"user_id": 2})
+    assert r.status_code == 422
+
+
+def test_list_returns_only_the_requested_project(client):
+    h = login(client)
+    bob_task_id = make_bob_only_project(client)[2]
+    r = client.get("/api/tasks", headers=h, params={"project_id": 1})
+    assert r.status_code == 200
+    assert all(t["project_id"] == 1 for t in r.json())
+    assert bob_task_id not in [t["id"] for t in r.json()]
+
+
+# --- delete -----------------------------------------------------------------------
+
+def test_deleted_task_returns_404_afterwards(client):
+    h = login(client)
+    task_id = new_task(client, h).json()["id"]
+    assert client.delete(f"/api/tasks/{task_id}", headers=h).status_code == 204
+    assert client.get(f"/api/tasks/{task_id}", headers=h).status_code == 404
+```
+
+</details>
+
+## Avoid this
+
+- **Editing the app to make a test pass.** The app is the thing under test. If you change it, you test your change.
+- **Copying the app's output into the expected value.** Write the expected code from the rule, then check the app against it.
+- **Testing only the happy path.** The boundary cases are where the bugs hide.
+- **Writing a test that always passes.** Before you trust a test, make sure it can fail. Step 5 does this for you.
+
+## Done when
+
+- Your `tests/test_my_api.py` covers every item on the checklist you chose to cover, with a note for any you skipped.
+- The file passes on the bug-free app.
+- You have a table of the failures from step 5. Each row has a rule, a real status code and your own explanation.

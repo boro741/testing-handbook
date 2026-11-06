@@ -1,0 +1,81 @@
+---
+title: "Template: test plan"
+sidebar_position: 3
+description: A copy-paste test plan template with a filled TaskFlow example.
+part: 98
+summary: Test plan template covering scope, approach, environments, roles and risks.
+tags: [template, test-plan]
+reading_time: 3
+related: ["/planning-strategy/writing-test-cases"]
+---
+
+<TLDR>
+A test plan says what you will test, how, with whom, when, and when you will stop. Keep it short enough that people read it.
+</TLDR>
+
+## When to use it
+
+Use it at the start of a release or a large feature. For load tests use the performance test plan instead.
+
+## Template
+
+```markdown
+# Test plan: [feature or release]
+
+## 1. Scope
+In scope:
+Out of scope:
+
+## 2. Test approach
+Levels and types (unit, API, UI, security...). What is automated.
+
+## 3. Environments and data
+
+## 4. Entry and exit criteria
+Start when:
+Done when:
+
+## 5. Schedule and owners
+
+## 6. Risks and mitigations
+| Risk | Impact | Mitigation |
+|---|---|---|
+
+## 7. Reporting
+Who gets which report, and when.
+```
+
+## Filled example
+
+```markdown
+# Test plan: TaskFlow task assignment (release 1.1)
+
+## 1. Scope
+In scope: assign endpoint, membership rule, assignment notification.
+Out of scope: login, project creation (unchanged).
+
+## 2. Test approach
+Unit tests for rules. API tests for 200, 403, 422. One UI check of the assign dialog. Security test: non-member gets 403.
+
+## 3. Environments and data
+Local app and the shared test environment. Users alice, bob; one project with a non-member user.
+
+## 4. Entry and exit criteria
+Start when: build deployed and smoke tests pass.
+Done when: all high-priority cases pass, no open Critical or Major bugs.
+
+## 5. Schedule and owners
+Test design: Mon. Execution: Tue to Thu. QA lead: A. Tester.
+
+## 6. Risks and mitigations
+| Risk | Impact | Mitigation |
+|---|---|---|
+| Notification service not ready | Cannot test events | Use a stub and retest later |
+
+## 7. Reporting
+Daily status in the team channel. Summary report on Friday.
+```
+
+:::info[Illustrative data]
+Dates, names and the release number are invented for the example.
+:::

@@ -1,0 +1,89 @@
+---
+title: Accessibility testing
+sidebar_position: 36
+description: How to test that people using screen readers, keyboards or zoom can still use the app, using WCAG 2.2 and axe-core.
+part: 6
+summary: Accessibility testing with WCAG 2.2, automated checks with axe-core, and the manual checks tools miss.
+tags: [accessibility, wcag, axe-core, non-functional]
+reading_time: 9
+related: ["/testing-by-layer/ui-testing", "/start-here/taskflow-reference", "/test-design/pairwise-testing"]
+---
+
+<TLDR>
+Accessibility testing checks that people who use screen readers, keyboards, zoom or high-contrast settings can still use your app. The standard is WCAG 2.2. Automated tools such as axe-core catch some problems in seconds. People testing by hand catch the rest.
+</TLDR>
+
+## What and why
+
+Accessibility, often shortened to "a11y", means your app works for people with disabilities. Some use a screen reader that reads the page aloud. Some cannot use a mouse. Some zoom the page to 200%.
+
+The Web Content Accessibility Guidelines (WCAG) are the main standard. WCAG 2.2 is a W3C Recommendation, published 12 December 2024. As of 2026-11-06, it is the current version. The guidelines group rules under four principles, often called POUR:
+
+- **Perceivable.** Users can sense the content. For example, images have text alternatives.
+- **Operable.** Users can use the controls. For example, every action works from the keyboard.
+- **Understandable.** Users can understand the content and the controls.
+- **Robust.** The content works with assistive tools, now and later.
+
+WCAG has three levels: A, AA and AAA. (Recommendation) Target **AA** for most products. It is the level most teams use as a baseline.
+
+## How it works
+
+Use two layers. Neither one is enough alone.
+
+1. **Automated checks.** [axe-core](https://github.com/dequelabs/axe-core) is an open-source accessibility engine (licence MPL-2.0, as of 2026-11-06). It reads the page's HTML and ARIA attributes and reports rule violations. It is fast and runs in CI.
+2. **Manual checks.** A tester uses the keyboard only, a screen reader, 200% zoom and a contrast checker. Manual checks judge meaning. For example, an automated tool can see that an image has alt text, but not whether the text is useful.
+
+Automated checks can only find a part of accessibility problems. Treat a clean scan as "no known rule failures", not "accessible".
+
+## When to use it (and when not to)
+
+| Use it when | Skip it when |
+|---|---|
+| The product has a user interface | The service is API only with no UI (test the API for other things) |
+| You add a form, dialog, menu or custom control | You have only a fixed-content page with no interaction |
+| You need evidence for a compliance review | You expect an automated scan alone to prove compliance |
+
+## TaskFlow example
+
+The local UI is a single page served at `http://localhost:8000/`. A Playwright test can run axe-core on it. The snippet below uses `@axe-core/playwright` and the `withTags` option, confirmed in the axe-core-npm docs (checked 2026-11-06). It is shown for illustration and was not run for this handbook.
+
+```ts
+import { test, expect } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
+
+test('TaskFlow home page has no WCAG 2.0 A or AA violations', async ({ page }) => {
+  await page.goto('http://localhost:8000/');
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa'])
+    .analyze();
+  expect(results.violations).toEqual([]);
+});
+```
+
+Automated checks cannot tell you everything. Add these manual checks for the login form and the task list:
+
+- Press Tab from the top of the page. Can you reach every control? Can you see which control has focus?
+- Does each input have a visible label? Does a placeholder alone count as a label? (It does not.)
+- Submit a wrong password. Is the error text connected to the field, so a screen reader announces it?
+- Zoom to 200%. Does the layout still work without horizontal scrolling?
+
+See [the TaskFlow reference](/start-here/taskflow-reference) for the business rules behind these screens.
+
+## Do this
+
+- Run axe-core in your UI tests on every key page, and fail the build on new violations. (Recommendation)
+- Test with the keyboard only at least once per release.
+- Include a screen reader pass for new forms and dialogs.
+- Use real labels, not placeholders, for form fields.
+- Record which WCAG criteria a finding breaks, so developers know what to fix.
+
+## Avoid this
+
+- Adding `aria-*` attributes to fix a problem that a real HTML element would solve.
+- Trusting a green scan as proof of accessibility.
+- Testing accessibility only at the end of a project.
+
+## Further reading
+
+- [WCAG 2.2 (W3C Recommendation)](https://www.w3.org/TR/WCAG22/). Checked 2026-11-06.
+- [axe-core on GitHub](https://github.com/dequelabs/axe-core). Checked 2026-11-06. Licence MPL-2.0.

@@ -1,0 +1,79 @@
+---
+title: Limits and risks of AI in testing
+sidebar_position: 80
+description: When traditional automation is the better choice, and the main risks of using AI in test work.
+part: 13
+summary: Traditional automation is better for fixed rules, gates and repeatable checks. AI helps most with drafting and reading.
+tags: [ai, risks, automation, decision-making]
+reading_time: 7
+related: ["/fundamentals/manual-vs-automated", "/automation-engineering/test-automation-pyramid", "/ai-in-testing/ai-testing-landscape", "/testing-by-layer/api-testing", "/performance-fundamentals/performance-strategy-and-ci"]
+---
+
+<TLDR>
+Traditional automation is better when the expected result is known, exact and repeatable. Use it for regression tests, release gates and load-test thresholds. AI is more useful for drafting, grouping and reading text. Its main risks are non-repeatable output, hidden data flows, false confidence and maintenance cost.
+</TLDR>
+
+## What and why
+
+Traditional automation runs a fixed script and checks fixed results. Given the same input and the same app, it gives the same answer. That property is worth a lot in testing. A release gate needs a fixed answer. A bug needs a test that fails the same way every time.
+
+AI tools trade some of that repeatability for speed and flexibility. They can read a messy log, draft a test from a story or explore an app without a script. That is useful, but the trade has a cost. Each risk below comes from that trade.
+
+## The main risks
+
+| Risk | What it looks like | Simple control |
+|---|---|---|
+| Non-repeatable output | The same prompt gives different tests or reports on each run | Fixed assertions; pin the model version; keep outputs in version control |
+| False confidence | A generated test passes because it checks today's behaviour | Human review of every assertion; break the feature on purpose |
+| Hidden data flow | Test data or logs go to a third-party model | Data policy check before use; send only summaries |
+| Cost | Every run calls a paid model | Run AI steps on a schedule, not on every commit |
+| Maintenance | Generated tests are hard to read and nobody owns them | Same code review and naming rules as any other test |
+| Silent repair | Self-healing hides a changed feature | Log every repair; review them |
+| Security | An agent takes an action it should not take | Permissions in code, outside the model ([Testing AI agents and AI security](/ai-in-testing/testing-ai-agents-and-security)) |
+
+## When traditional automation is better
+
+| Situation | Better choice | Why |
+|---|---|---|
+| A business rule with exact limits (a title of 1 to 100 characters) | Parameterised API tests ([API testing](/testing-by-layer/api-testing)) | The rule is known. A fixed test checks it every run |
+| A release gate that must give the same answer twice | Scripted test with a fixed expected result | A gate that changes its answer is not a gate |
+| A load test with a latency threshold | A load tool with fixed thresholds ([Hands-on: Locust with pytest](/load-testing-tools/locust-with-pytest)) | The pass or fail rule must be code, not a judgement |
+| A contract between two services | Contract tests ([Integration and contract testing](/testing-by-layer/integration-and-contract-testing)) | The contract is the source of truth |
+| Data with personal or secret content | Local, scripted tests with masked data | No data should leave the network |
+| A tiny suite that few people maintain | Plain scripts | The overhead of an AI tool costs more than it saves |
+
+## When AI is a reasonable help
+
+- Drafting a first version of a test that a person then rewrites.
+- Grouping failures and summarising logs, with the grouping done by code ([AI for failure triage](/ai-in-testing/ai-failure-triage)).
+- Exploring a new feature for ideas ([Agentic and exploratory testing with browser agents](/ai-in-testing/browser-agents)).
+- Explaining a performance change after the numbers are computed ([AI for performance analysis](/ai-in-testing/ai-performance-analysis)).
+
+In each case, a person or a fixed check has the final word.
+
+## TaskFlow example
+
+TaskFlow's rules are small and exact: title length, priority values, status flow, and assignment rules. Each one can be tested with a plain pytest test that uses the existing `client` fixture. The existing suite has 19 tests, which is the count in [the TaskFlow reference](/start-here/taskflow-reference). For these rules, an AI tool would add cost and variation without finding anything the fixed tests miss. Use AI for the parts that are text-heavy, such as a triage draft, not for the rules.
+
+## Do this
+
+- Start with traditional automation for any rule that has an exact expected result.
+- Put a fixed check around every AI output that reaches a decision.
+- Check the data policy before you send anything to a model.
+- Ask "what would tell us this is wrong?" before you adopt a tool.
+- Review the costs of an AI step, including model calls, as part of the test budget.
+
+## Avoid this
+
+- Replacing a working regression suite with AI-generated tests to save time.
+- Using AI to decide pass or fail for a release.
+- Adopting a tool because a vendor says it is AI-powered.
+
+:::tip[Recommendation]
+Keep the deterministic suite as the gate. Add AI tools beside it, as helpers, and measure whether they find real problems.
+:::
+
+## Further reading
+
+- [Manual vs automated testing](/fundamentals/manual-vs-automated) for the general trade-off between the two.
+- [Test automation pyramid](/automation-engineering/test-automation-pyramid) for where fixed tests belong.

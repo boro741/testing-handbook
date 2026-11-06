@@ -1,0 +1,103 @@
+---
+title: Enterprise platform testing
+sidebar_position: 16.6
+description: "How to test enterprise platforms such as SAP and Salesforce: custom code and configuration, vendor release cycles, test data, integrations and regression after vendor updates."
+part: 16
+summary: "Enterprise platforms are built and updated by a vendor, so your tests must cover your own customisations, your integrations, and the vendor's release cycle."
+tags: [enterprise, sap, salesforce, regression, integration]
+reading_time: 6
+related: ["/other-non-functional/security-testing", "/testing-by-layer/integration-and-contract-testing", "/modern-quality-engineering/test-environments"]
+---
+
+<TLDR>
+Enterprise platforms such as SAP and Salesforce are products that a vendor builds, updates and runs. Your team adds custom code, settings and integrations on top. Testing has to cover what you changed, how it talks to other systems, and whether it still works after each vendor release.
+</TLDR>
+
+Concepts only. Nothing on this page was run here.
+
+## What and why
+
+An enterprise platform is a large business system, such as a finance, sales or supply-chain product, that a vendor sells to many customers. Most companies do not write the core. They configure it and add their own code for the parts that make them different.
+
+This setup creates three testing problems:
+
+- **You do not own the core.** A bug in the vendor's code is not yours to fix, but a change in the vendor's code can break yours.
+- **The vendor sets the pace.** New releases arrive on the vendor's schedule, not yours.
+- **Your data is spread across systems.** A sale in the sales platform becomes an invoice in the finance platform, so a failure can sit between two products.
+
+## What you test
+
+Split the work into four areas:
+
+| Area | What it covers | Example question |
+|---|---|---|
+| Custom code | Code you wrote in the platform's own language or extension model | Does the discount rule give the right price? |
+| Configuration | Settings, fields, approval flows and roles | Can a clerk approve up to the limit, and no further? |
+| Integrations | Data passed to and from other systems | Does an order reach the warehouse once, with the right quantity? |
+| Reports | Figures your managers read | Do the totals match the source records? |
+
+Configuration is the area teams forget. A changed approval limit needs a test as much as code does.
+
+## Release cycles
+
+Vendors publish release schedules and often offer a preview copy. Read the current schedule from the vendor's site. When a preview appears, run the regression suite against it, separate vendor changes from your own bugs, and agree a go or no-go date with the business.
+
+Recommendation: keep a regression suite that runs unattended, so a preview can be checked within a day.
+
+## Test data
+
+Records link to customers, products and users, and many are personal data. Options include:
+
+- A **masked copy** of production, with names and addresses replaced. Check that masking did not break links between records.
+- **Synthetic data** created by scripts, which is safe but may miss real edge cases.
+- A **small set of reference records** kept in version control, so each test run starts from the same state.
+
+Check the rules for personal data before you copy anything. [Security testing](/other-non-functional/security-testing) covers access control in general.
+
+## Integrations
+
+Each integration is a contract between two systems. Test the contract on both sides. Check the message format, the mapping of fields, the handling of duplicates, and what happens when the other system is down. [Integration and contract testing](/testing-by-layer/integration-and-contract-testing) explains the method in general.
+
+## Regression after vendor updates
+
+A vendor update can change behaviour you never touched. A field can move, a default can change, or an API can alter its response. Regression testing after each vendor release should check:
+
+- Every custom rule still produces the same output for a fixed set of inputs.
+- Every integration still sends and receives valid messages.
+- Every report still totals correctly.
+
+Check the vendor tools that your platform provides. This page does not name them, because each vendor documents its own tools and changes them over time.
+
+## TaskFlow example
+
+:::info[Illustrative data]
+TaskFlow is not an enterprise platform. This example imagines TaskFlow tasks being pushed to a sales platform as follow-up actions for customer accounts. The records below are invented and were not run.
+:::
+
+Imagine three regression checks after a vendor preview:
+
+- Create a follow-up action in the sales platform for a test account. Check that the matching TaskFlow task appears once, not twice.
+- Change a priority in TaskFlow. Check that the sales platform shows the new value, and that a value outside the allowed list is rejected with a logged reason.
+- Run the monthly summary report on the masked copy. Check that the count of follow-ups equals the count of matching tasks.
+
+The rules for TaskFlow tasks, including the allowed priorities, are in the [TaskFlow reference](/start-here/taskflow-reference).
+
+## Do this
+
+- Test your configuration as you test your code.
+- Keep a versioned set of reference records for each test run.
+- Run the regression suite against each vendor preview, and record which failures came from the vendor.
+
+## Avoid this
+
+- Testing only your custom code and assuming the configuration is fine.
+- Waiting for the production update to find out what the vendor changed.
+- Using a full copy of live personal data in a test environment without a review.
+- Treating a passing integration test as proof that the business process works end to end.
+
+## Further reading
+
+No external sources were checked for this page, so none are listed. Related pages in this handbook:
+
+- [Test environments](/modern-quality-engineering/test-environments), for how to set up the preview and test copies that vendor releases need.
+- [Integration and contract testing](/testing-by-layer/integration-and-contract-testing), for checking the links between systems.

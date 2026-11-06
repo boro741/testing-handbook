@@ -1,0 +1,72 @@
+---
+title: "Template: test summary report"
+sidebar_position: 6
+description: A copy-paste test summary report template with a filled TaskFlow example.
+part: 98
+summary: Test summary report with results, defects, risks and a release recommendation.
+tags: [template, report]
+reading_time: 2
+related: []
+---
+
+<TLDR>
+A test summary report tells decision makers what was tested, what was found and whether it is safe to release. Lead with the answer.
+</TLDR>
+
+## When to use it
+
+Use it at the end of a test cycle, a sprint or a release.
+
+## Template
+
+```markdown
+# Test summary: [release], [dates]
+
+## Recommendation
+Release / Release with known issues / Do not release. One sentence why.
+
+## Scope tested
+What was and was not covered.
+
+## Results
+| Type | Planned | Run | Passed | Failed | Blocked |
+|---|---|---|---|---|---|
+
+## Defects
+Open by severity. Critical items listed one by one.
+
+## Risks and gaps
+
+## Next steps
+```
+
+## Filled example
+
+```markdown
+# Test summary: TaskFlow 1.1, week of 2026-11-02
+
+## Recommendation
+Release with known issues. One Major bug has a workaround.
+
+## Scope tested
+Assignment, status flow, access rules. Not tested: mobile app, load.
+
+## Results
+| Type | Planned | Run | Passed | Failed | Blocked |
+|---|---|---|---|---|---|
+| API | 40 | 40 | 38 | 2 | 0 |
+| UI | 10 | 9 | 8 | 1 | 1 |
+
+## Defects
+Open: 0 Critical, 1 Major (reopen button hidden on small screens), 2 Minor.
+
+## Risks and gaps
+No load test this cycle. Notification service tested with a stub.
+
+## Next steps
+Fix the Major bug in 1.1.1. Schedule a load test.
+```
+
+:::info[Illustrative data]
+All counts and findings are invented to show the format.
+:::

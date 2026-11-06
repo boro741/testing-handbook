@@ -1,0 +1,306 @@
+---
+title: "Self-check quizzes"
+sidebar_position: 97.6
+description: "Twenty multiple-choice questions across the handbook, each with one correct answer and a short answer you can open. Use them to see which chapters to re-read."
+part: 97
+summary: Twenty questions on testing principles, test design, performance, security and delivery, with a scoring guide that points to the next pages to read.
+tags: [practice, quiz, self-check, review]
+reading_time: 6
+related: ["/practice/learning-paths", "/practice/exercises-fundamentals-and-design", "/practice/exercises-automation-and-layers", "/practice/exercises-nonfunctional-and-performance", "/practice/exercises-modern-and-ai"]
+---
+
+<TLDR>
+Twenty questions, four options each, one correct answer. Answer before you open each answer, then use the scoring guide.
+</TLDR>
+
+## What and why
+
+These quizzes check recall. Each question has one answer that matches the handbook's text. If you miss one, re-read the page named in the answer.
+
+## Questions
+
+**1.** Which principle says testing cannot prove that defects are absent?
+
+- A. Exhaustive testing is impossible.
+- B. Defects cluster together.
+- C. Testing shows that defects are present, not that they are absent.
+- D. The pesticide paradox.
+
+<details>
+<summary>Show the answer</summary>
+
+**C.** It is the first principle in [what is software testing](/fundamentals/what-is-software-testing).
+
+</details>
+
+**2.** An API test checks that a 101-character title returns 422. This is:
+
+- A. Verification.
+- B. Validation.
+- C. Acceptance testing.
+- D. Exploratory testing.
+
+<details>
+<summary>Show the answer</summary>
+
+**A.** Verification checks the product against its specification. See [verification vs validation](/fundamentals/verification-vs-validation).
+
+</details>
+
+**3.** Five real users say 100 characters is too short. This is:
+
+- A. Verification.
+- B. Smoke testing.
+- C. Regression testing.
+- D. Validation.
+
+<details>
+<summary>Show the answer</summary>
+
+**D.** Validation checks the product against real user needs, as explained on the [verification vs validation](/fundamentals/verification-vs-validation) page.
+
+</details>
+
+**4.** Which test asks "is this build alive enough to test at all?"
+
+- A. Sanity.
+- B. Smoke.
+- C. Retest.
+- D. Regression.
+
+<details>
+<summary>Show the answer</summary>
+
+**B.** See [regression, retest, smoke and sanity testing](/fundamentals/regression-retest-smoke-sanity).
+
+</details>
+
+**5.** A developer says a defect is fixed. What do you run first?
+
+- A. The full regression suite.
+- B. The test that failed.
+- C. The smoke suite.
+- D. An exploratory session.
+
+<details>
+<summary>Show the answer</summary>
+
+**B.** Retesting re-runs the failed test first. See [regression, retest, smoke and sanity testing](/fundamentals/regression-retest-smoke-sanity).
+
+</details>
+
+**6.** A test checks one validator on its own. Which level is it?
+
+- A. Acceptance.
+- B. Integration.
+- C. System.
+- D. Unit.
+
+<details>
+<summary>Show the answer</summary>
+
+**D.** See [test levels and test types](/fundamentals/test-levels-and-types).
+
+</details>
+
+**7.** Which check is best kept manual?
+
+- A. Whether the reopen button is easy to find.
+- B. The 19 API tests on every build.
+- C. A title-length boundary check.
+- D. A login check on every build.
+
+<details>
+<summary>Show the answer</summary>
+
+**A.** A script cannot judge ease of use. See [manual vs automated testing](/fundamentals/manual-vs-automated).
+
+</details>
+
+**8.** Which field says how soon the team should fix a defect?
+
+- A. Severity.
+- B. Status.
+- C. Priority.
+- D. Risk.
+
+<details>
+<summary>Show the answer</summary>
+
+**C.** Severity is how much harm it does. See [defect management and the bug life cycle](/planning-strategy/defect-management).
+
+</details>
+
+**9.** In risk-based testing, how is a risk score made?
+
+- A. The number of tests.
+- B. Likelihood plus impact.
+- C. Impact divided by likelihood.
+- D. Likelihood multiplied by impact.
+
+<details>
+<summary>Show the answer</summary>
+
+**D.** See [risk-based testing](/planning-strategy/risk-based-testing).
+
+</details>
+
+**10.** For the title rule of 1 to 100 characters, which lengths are the boundary values?
+
+- A. 1, 50 and 100.
+- B. 0, 1, 100 and 101.
+- C. 50 and 75.
+- D. 99 and 100.
+
+<details>
+<summary>Show the answer</summary>
+
+**B.** See [equivalence partitioning and boundary values](/test-design/equivalence-partitioning-and-boundaries).
+
+</details>
+
+**11.** A task exists, the caller is a member, and the assignee is not a member. What does the assign API return?
+
+- A. 200.
+- B. 403.
+- C. 422.
+- D. 409.
+
+<details>
+<summary>Show the answer</summary>
+
+**C.** See [decision table testing](/test-design/decision-tables) and the TaskFlow [business rules](/start-here/taskflow-reference).
+
+</details>
+
+**12.** Which status move is rejected with 409 under the TaskFlow rules?
+
+- A. TODO to DONE.
+- B. IN_PROGRESS to IN_REVIEW.
+- C. IN_REVIEW to DONE.
+- D. TODO to IN_PROGRESS.
+
+<details>
+<summary>Show the answer</summary>
+
+**A.** Only TODO to IN_PROGRESS is allowed from TODO. See [state transition testing](/test-design/state-transition-testing).
+
+</details>
+
+**13.** Which step-back is allowed?
+
+- A. IN_REVIEW to IN_PROGRESS.
+- B. DONE to TODO.
+- C. IN_PROGRESS to DONE.
+- D. REOPENED to DONE.
+
+<details>
+<summary>Show the answer</summary>
+
+**A.** The two allowed step-backs are IN_PROGRESS to TODO and IN_REVIEW to IN_PROGRESS. See the [TaskFlow reference](/start-here/taskflow-reference).
+
+</details>
+
+**14.** What does pairwise testing aim to do?
+
+- A. Test every combination.
+- B. Test only the happy path.
+- C. Cover every pair of values with far fewer runs.
+- D. Generate random inputs.
+
+<details>
+<summary>Show the answer</summary>
+
+**C.** See [pairwise testing](/test-design/pairwise-testing).
+
+</details>
+
+**15.** Which percentile shows the typical request?
+
+- A. p95.
+- B. p50.
+- C. p99.
+- D. The maximum.
+
+<details>
+<summary>Show the answer</summary>
+
+**B.** The median is the typical request. See [performance metrics](/performance-fundamentals/performance-metrics).
+
+</details>
+
+**16.** With 20 requests per second and a 0.25 s response time, how many requests are in progress, by Little's Law?
+
+- A. 20.
+- B. 0.0125.
+- C. 80.
+- D. 5.
+
+<details>
+<summary>Show the answer</summary>
+
+**D.** L = λ × W = 20 × 0.25 = 5. See [performance metrics](/performance-fundamentals/performance-metrics).
+
+</details>
+
+**17.** Memory climbs steadily under flat load in a soak test. What is the best first step?
+
+- A. Raise the task memory.
+- B. Profile the code to find what grows.
+- C. Stop monitoring.
+- D. Shorten the test.
+
+<details>
+<summary>Show the answer</summary>
+
+**B.** See [soak tests and memory leaks](/ecs-performance/soak-tests-and-memory-leaks).
+
+</details>
+
+**18.** The database connection limit is the bottleneck. What does adding tasks do?
+
+- A. Makes latency worse, not better.
+- B. Raises capacity in a straight line.
+- C. Frees database connections.
+- D. Fixes slow queries.
+
+<details>
+<summary>Show the answer</summary>
+
+**A.** See [per-task capacity and task count](/ecs-performance/per-task-capacity-and-task-count).
+
+</details>
+
+**19.** A user changes a task ID in the URL and reads a task from another project. Which OWASP Top 10 (2025) category fits?
+
+- A. A07 Authentication Failures.
+- B. A05 Injection.
+- C. A02 Security Misconfiguration.
+- D. A01 Broken Access Control.
+
+<details>
+<summary>Show the answer</summary>
+
+**D.** See [security testing fundamentals](/other-non-functional/security-testing).
+
+</details>
+
+**20.** A test uses a fixed sleep and fails on slow CI runs. Which flaky-test cause is this?
+
+- A. Order dependence.
+- B. Shared data.
+- C. Timing.
+- D. An external service.
+
+<details>
+<summary>Show the answer</summary>
+
+**C.** A fixed sleep is a timing cause. See [flaky tests](/automation-engineering/flaky-tests).
+
+</details>
+
+## Scoring guide
+
+- **0 to 6:** Re-read [what is software testing](/fundamentals/what-is-software-testing) and [test levels and test types](/fundamentals/test-levels-and-types). Then try the [fundamentals and design exercises](/practice/exercises-fundamentals-and-design).
+- **7 to 13:** Re-read the test design pages behind your misses, such as [equivalence partitioning and boundary values](/test-design/equivalence-partitioning-and-boundaries). Then try the [non-functional and performance exercises](/practice/exercises-nonfunctional-and-performance).
+- **14 to 20:** You have the core. Re-read the pages behind your misses, such as [performance metrics](/performance-fundamentals/performance-metrics), then try the [modern practice and AI exercises](/practice/exercises-modern-and-ai).

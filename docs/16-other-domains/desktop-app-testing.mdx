@@ -1,0 +1,93 @@
+---
+title: Desktop app testing
+sidebar_position: 16.3
+description: "How to test a desktop app: native UI automation on Windows and macOS, installers and upgrades, offline use and crash reporting."
+part: 16
+summary: "A desktop app runs on the user's own machine, so tests must cover installs, upgrades, offline work and crashes, not only the screen."
+tags: [desktop, ui-automation, installers, offline, crash-reporting]
+reading_time: 6
+related: ["/testing-by-layer/ui-testing", "/testing-by-layer/mobile-app-testing", "/other-non-functional/compatibility-testing"]
+---
+
+<TLDR>
+A desktop app is installed on a person's computer and often works without a network. Testing one means driving its window through the operating system's accessibility tree, testing the installer and the upgrade path, checking behaviour offline, and making sure crashes are reported. Good coverage needs the machine around the app as well as the screen.
+</TLDR>
+
+Concepts only. Nothing on this page was run here.
+
+## What and why
+
+A desktop app is installed on Windows, macOS or Linux, on a machine you do not control. The user may keep an old version for months, work offline or have a different graphics card.
+
+Three things make desktop testing different from web testing:
+
+- **The UI is reached through the operating system.** Each platform exposes the controls on screen as a tree that assistive tools, such as screen readers, can read. Test tools use the same tree.
+- **The app is installed, not deployed.** The installer, the upgrade and the uninstall are part of the product. A bug there reaches every user.
+- **Failures happen out of sight.** A crash on a user's laptop never reaches your logs unless you built a way to send it.
+
+## How it works
+
+Native UI automation reads the control tree. Microsoft's UI Automation framework, for example, describes itself as an accessibility framework that gives "programmatic access to most UI elements on the desktop". Each element has properties such as a name and a control type. A test script can search this tree for a button named "Save" and press it. Apple's accessibility framework on macOS plays the same role on Mac.
+
+The tree explains why UI tests can be stable or fragile:
+
+- A test that finds "Save" by name or by automation ID keeps working when the button moves.
+- A test that clicks at a fixed screen position breaks on every layout change, display scale or window size.
+- If the app does not give its controls stable names, the tool has nothing stable to find.
+
+Tool families, checked on 2026-11-06: WinAppDriver is a Microsoft service that supports Selenium-style UI tests for Windows apps. The Appium Mac2 driver is an Appium plugin that automates macOS apps through Apple's XCTest framework. Both links are in Further reading.
+
+## When to use it
+
+| Use it when | Skip it when |
+|---|---|
+| The app is installed on user machines | The product is only a web app |
+| Users work offline or on weak networks | All the logic lives on a server you test directly |
+| Users stay on old versions for a long time | You ship one version and force every update |
+| Crashes must be diagnosed without user help | Crash data cannot leave the device for legal reasons (then plan a privacy-safe method first) |
+
+## Installers and upgrades
+
+Each release needs three install paths tested: a **fresh install** on a clean machine image, an **upgrade** from each supported older version with the user's data still present, and an **uninstall** that leaves no broken files or background services.
+
+Also test an interrupted upgrade. A good installer rolls back; a poor one leaves a half-installed app.
+
+## Offline use and sync
+
+Many desktop apps keep a local copy of data and sync later. Test offline, online and flapping networks. Check what happens to offline changes and to edits made on two devices.
+
+## Crash reporting
+
+When the app crashes, the user should not lose the report. Collect the app version, the operating system, a stack trace and the last few actions. Stack traces are only readable if you keep the symbol files for each release. Crash data can contain personal information, so review what is sent.
+
+## TaskFlow example
+
+:::info[Illustrative data]
+TaskFlow has a web interface and no desktop app. This example imagines a desktop client that keeps a local copy of tasks and syncs when it is online. The test ideas are not run anywhere.
+:::
+
+Imagine three checks for that client:
+
+- Install version 1.4 on a clean Windows image, create three tasks, upgrade to 1.5, and check that the three tasks are still there with the same status.
+- Turn the network off, create two tasks, turn it back on, and check that both tasks reach the server once and not twice. The [TaskFlow reference](/start-here/taskflow-reference) lists the task rules the server enforces.
+- Kill the process while a save is in progress, restart the app, and check that the local file opens without corruption.
+
+## Do this
+
+- Give every control a stable name or automation ID.
+- Test the upgrade from each supported old version, not only a fresh install.
+- Test with the network off, then on, then flapping.
+- Recommendation: keep symbol files for every release, so crash reports can be read.
+
+## Avoid this
+
+- Clicking at fixed screen coordinates.
+- Testing only on a developer machine that already has the app's files and settings.
+- Testing only fresh installs.
+- Collecting crash reports without a privacy review of what they contain.
+
+## Further reading
+
+- [WinAppDriver on GitHub](https://github.com/microsoft/WinAppDriver), checked 2026-11-06: a service for Selenium-style UI tests of Windows apps.
+- [Appium Mac2 driver on GitHub](https://github.com/appium/appium-mac2-driver), checked 2026-11-06: automates macOS apps through XCTest.
+- [Microsoft UI Automation overview](https://learn.microsoft.com/en-us/windows/win32/winauto/uiauto-uiautomationoverview), checked 2026-11-06: the Windows accessibility framework that exposes the control tree.

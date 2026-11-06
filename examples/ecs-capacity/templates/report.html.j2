@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ data.report_title }}</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1d2330; --muted: #5b6475; --line: #d9dee8;
+    --card: #f5f7fb; --pass: #1c7c3a; --fail: #b42318; --warn: #9a6700;
+    --bar: #3b6fd8; --slo: #b42318;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12151c; --fg: #e6e9f0; --muted: #9aa3b5; --line: #2c3340;
+      --card: #1b2030; --pass: #4cc26b; --fail: #ff6b5e; --warn: #f0b429;
+      --bar: #6d9cff; --slo: #ff6b5e;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #12151c; --fg: #e6e9f0; --muted: #9aa3b5; --line: #2c3340;
+    --card: #1b2030; --pass: #4cc26b; --fail: #ff6b5e; --warn: #f0b429;
+    --bar: #6d9cff; --slo: #ff6b5e;
+  }
+  body { background: var(--bg); color: var(--fg); margin: 0; font: 16px/1.5 system-ui, sans-serif; }
+  main { max-width: 960px; margin: 0 auto; padding: 16px; }
+  h1 { font-size: 1.6rem; margin: 8px 0; }
+  h2 { font-size: 1.2rem; border-bottom: 1px solid var(--line); padding-bottom: 4px; margin-top: 32px; }
+  .banner { background: var(--warn); color: #111; font-weight: 600; padding: 10px 14px; border-radius: 6px; }
+  .verdict { display: inline-block; font-weight: 700; padding: 6px 14px; border-radius: 6px; color: #fff; }
+  .verdict.pass { background: var(--pass); }
+  .verdict.fail { background: var(--fail); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; margin: 8px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.95rem; display: block; overflow-x: auto; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; }
+  .bad { color: var(--fail); font-weight: 600; }
+  .good { color: var(--pass); font-weight: 600; }
+  .bar-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+  .bar-label { width: 90px; color: var(--muted); }
+  .bar-track { flex: 1; background: var(--line); border-radius: 4px; height: 16px; position: relative; }
+  .bar-fill { background: var(--bar); height: 16px; border-radius: 4px; }
+  .slo-line { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--slo); }
+  .bar-value { width: 80px; text-align: right; font-variant-numeric: tabular-nums; }
+  small, .muted { color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+
+<div class="banner">{{ data.data_label }}. {{ data.data_note }}</div>
+
+<h1>{{ data.report_title }} <span class="muted">({{ data.data_label }})</span></h1>
+<p class="muted">Run {{ data.run_id }}{% if 'run_date' in data %} on {{ data.run_date }}{% endif %}{% if 'previous_run_id' in data %}, compared with {{ data.previous_run_id }}{% endif %}</p>
+
+<h2>1. Executive summary</h2>
+<div class="card">
+  <p>
+    Verdict:
+    <span class="verdict {{ 'pass' if verdict.passed else 'fail' }}">{{ verdict.label }}</span>
+  </p>
+  <p>
+    SLO: p95 at or below {{ data.slo.p95_ms }} ms, error rate at or below {{ data.slo.max_error_rate_pct }}%.
+    {% if verdict.passed %}
+    Every scenario met the SLO.
+    {% else %}
+    Failed in: {{ verdict.failing_scenarios | join(", ") }}.
+    {% endif %}
+  </p>
+  {% if 'headline' in data %}<p>{{ data.headline }}</p>{% endif %}
+</div>
+
+<h2>2. System under test</h2>
+<table>
+  <thead><tr><th>Service</th><th>Version</th><th>Task size</th><th>Task count</th><th>Auto scaling</th></tr></thead>
+  <tbody>
+  {% for svc in data.system_under_test.services %}
+    <tr><td>{{ svc.name }}</td><td>{{ svc.version }}</td><td>{{ svc.task_size }}</td><td>{{ svc.task_count }}</td><td>{{ svc.autoscaling }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+<p>Database: {{ data.system_under_test.database }}. Connection pool: {{ data.system_under_test.connection_pool }}.</p>
+
+<h2>3. Test environment and load generator</h2>
+<ul>
+  <li>Region: {{ data.environment.region }}</li>
+  <li>Load generator: {{ data.environment.load_generator }}</li>
+  <li>Test data: {{ data.environment.test_data }}</li>
+</ul>
+
+<h2>4. Scenarios</h2>
+<table>
+  <thead><tr><th>Scenario</th><th>Target RPS</th><th>Duration (min)</th><th>How the traffic was derived</th></tr></thead>
+  <tbody>
+  {% for s in data.scenarios %}
+    <tr><td>{{ s.name }}</td><td>{{ s.rps }}</td><td>{{ s.duration_min }}</td><td>{{ s.traffic_profile }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<h2>5. Results</h2>
+<table>
+  <thead><tr><th>Scenario</th><th>RPS</th><th>p50 (ms)</th><th>p95 (ms)</th><th>p99 (ms)</th><th>Error rate (%)</th><th>Timeouts</th><th>SLO</th></tr></thead>
+  <tbody>
+  {% for row in verdict.rows %}
+    <tr>
+      <td>{{ row.scenario }}</td><td>{{ row.rps }}</td><td>{{ row.p50_ms }}</td>
+      <td class="{{ 'good' if row.p95_ok else 'bad' }}">{{ row.p95_ms }}</td>
+      <td>{{ row.p99_ms }}</td>
+      <td class="{{ 'good' if row.err_ok else 'bad' }}">{{ row.error_rate_pct }}</td>
+      <td>{{ row.timeouts }}</td>
+      <td class="{{ 'good' if row.pass else 'bad' }}">{{ 'PASS' if row.pass else 'FAIL' }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+<h3>p95 against the SLO</h3>
+{% for row in verdict.rows %}
+<div class="bar-row">
+  <span class="bar-label">{{ row.scenario }}</span>
+  <div class="bar-track">
+    <div class="bar-fill" style="width: {{ (row.p95_ms / max_p95 * 100) | round(1) }}%"></div>
+    <div class="slo-line" style="left: {{ (data.slo.p95_ms / max_p95 * 100) | round(1) }}%"></div>
+  </div>
+  <span class="bar-value">{{ row.p95_ms }} ms</span>
+</div>
+{% endfor %}
+<p class="muted">The red line marks the SLO ({{ data.slo.p95_ms }} ms). Bars are scaled to the slowest scenario.</p>
+
+<h2>6. Infrastructure</h2>
+<table>
+  <tbody>
+    <tr><th>Running tasks (min / max)</th><td>{{ data.infrastructure.running_tasks.min }} / {{ data.infrastructure.running_tasks.max }}</td></tr>
+    <tr><th>Task CPU, average at peak</th><td>{{ data.infrastructure.task_cpu_avg_pct_peak }}%</td></tr>
+    <tr><th>Task memory, average at peak</th><td>{{ data.infrastructure.task_memory_avg_pct_peak }}%</td></tr>
+    <tr><th>DB connections in use, peak / max</th><td>{{ data.infrastructure.db_connections_in_use_peak }} / {{ data.infrastructure.db_connections_max }}</td></tr>
+    <tr><th>DB pool wait, p95</th><td>{{ data.infrastructure.db_pool_wait_p95_ms }} ms</td></tr>
+    <tr><th>ALB target response time, p95</th><td>{{ data.infrastructure.alb_target_response_time_p95_ms }} ms</td></tr>
+    <tr><th>ALB unhealthy hosts, max</th><td>{{ data.infrastructure.alb_unhealthy_host_count_max }}</td></tr>
+    <tr><th>ALB 5XX from targets / from ELB</th><td>{{ data.infrastructure.alb_http_5xx_target_count }} / {{ data.infrastructure.alb_http_5xx_elb_count }}</td></tr>
+  </tbody>
+</table>
+
+<h2>7. Comparison with previous baseline</h2>
+{% if comparison %}
+<table>
+  <thead><tr><th>Metric</th><th>Previous</th><th>Current</th><th>Delta</th></tr></thead>
+  <tbody>
+  {% for c in comparison %}
+    <tr><td>{{ c.metric }}</td><td>{{ c.previous }}</td><td>{{ c.current }}</td><td>{{ '%+g' | format(c.delta) }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="muted">No previous run was given, so there is no comparison.</p>
+{% endif %}
+
+<h2>8. Bottleneck analysis</h2>
+{% for b in data.bottlenecks %}
+<div class="card">
+  <p><strong>Hypothesis:</strong> {{ b.hypothesis }}</p>
+  <p><strong>Evidence:</strong> {{ b.evidence }}</p>
+  <p><strong>Conclusion:</strong> {{ b.conclusion }}</p>
+</div>
+{% endfor %}
+
+<h2>9. Recommendations</h2>
+<p class="muted">Recommendations for humans to review. Nothing is applied automatically.</p>
+{% for area in ["Infrastructure", "Application", "Database"] %}
+  {% set items = data.recommendations | selectattr("area", "equalto", area) | list %}
+  {% if items %}
+  <h3>{{ area }}</h3>
+  <table>
+    <thead><tr><th>Action</th><th>Owner</th><th>Priority</th><th>Expected impact</th></tr></thead>
+    <tbody>
+    {% for r in items %}
+      <tr><td>{{ r.action }}</td><td>{{ r.owner }}</td><td>{{ r.priority }}</td><td>{{ r.expected_impact }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+{% endfor %}
+
+<h2>10. Risks, limitations and what was NOT tested</h2>
+<h3>Risks and limitations</h3>
+<ul>{% for item in data.risks_and_limitations %}<li>{{ item }}</li>{% endfor %}</ul>
+<h3>Not tested</h3>
+<ul>{% for item in data.not_tested %}<li>{{ item }}</li>{% endfor %}</ul>
+
+</main>
+</body>
+</html>

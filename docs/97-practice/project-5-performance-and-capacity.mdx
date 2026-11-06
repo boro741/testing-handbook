@@ -1,0 +1,98 @@
+---
+title: "Project 5: performance and capacity"
+sidebar_position: 97.12
+description: "Write one Locust scenario for TaskFlow, run a short smoke test, set a response-time and error-rate target, run the SLO gate, then size a service with the capacity script."
+part: 97
+summary: "Write a Locust scenario, run a smoke test, set an SLO, check it with the gate, then calculate how many tasks a service needs."
+tags: [practice, project, performance, locust, slo, capacity]
+reading_time: 10
+related: ["/practice/project-overview", "/practice/project-4-automate-the-ui", "/practice/exercises-nonfunctional-and-performance", "/start-here/taskflow-reference"]
+---
+
+<TLDR>
+You write one load-test scenario with Locust, run a short smoke test and set a service level objective (SLO) for response time and errors. You then check the SLO with a pytest gate. Last, you use a small script to turn a measured per-task rate into a task count. Keep every run short, and keep results outside the repo.
+</TLDR>
+
+:::info[Illustrative data]
+All numbers on this page are examples or the output of one short local run on a laptop. They are not benchmarks. No AWS system was measured. Your numbers will be different.
+:::
+
+## What and why
+
+A load test sends many users at a system and measures what happens. The two numbers that matter most here are response time and errors. Response time is usually given as a percentile. The 95th percentile (p95) is the time that 95 out of 100 requests beat. A service level objective (SLO) is a target for those numbers, for example "p95 under 500 ms and under 1% errors".
+
+Capacity planning uses the result of a load test to decide how many copies of a service to run. If one copy handles a known number of requests per second within the SLO, you can divide the expected peak by that number.
+
+## Before you start
+
+Use the same setup as the API project. Install `examples/taskflow/requirements-dev.txt`, which includes Locust. Start the app on a port you choose. Use a database file outside the repo:
+
+```bash
+cd examples/taskflow
+DATABASE_URL=sqlite:////tmp/taskflow-perf.db uvicorn app.main:app --port 8000
+```
+
+Keep this terminal open. Put every CSV and result file in a folder outside the repo, such as `/tmp/perf-results`. Do not write results into `examples/taskflow/`.
+
+## Steps
+
+**Step 1: Read the reference scenario.** Open `examples/taskflow/loadtest/locustfile.py`. It logs in once in `on_start`. Then it runs three weighted tasks: create and read a task, list tasks, and move a task. Note the `name=` argument on each request. It groups requests with different IDs into one row in the report.
+
+**Step 2: Write one scenario.** Put your file in `/tmp/perf-scenarios/locustfile.py`. Keep it to one user class and one task, for example listing tasks. The class logs in once and then calls `GET /api/tasks?project_id=1` with the bearer token. Use `between(0.5, 2)` for the wait time. Use `name=` so the request has a clean row name.
+
+**Step 3: Run a smoke test.** A smoke test is a short run with a few users. It checks that the scenario works and the server answers. The reference command is:
+
+```bash
+locust -f loadtest/locustfile.py --host http://localhost:8000 --headless -u 10 -r 2 -t 1m --csv /tmp/perf-results/smoke
+```
+
+Run it from `examples/taskflow`. It takes one minute. Read the table. Check the error count first. If it is not zero, fix the scenario before you look at anything else. The `--csv` path points outside the repo, which the reference command in the README does not do.
+
+**Step 4: Set the SLO.** Write one sentence, for example: "At 10 users, p95 is 500 ms or less, and fewer than 1% of requests fail." The gate uses these defaults: `SLO_P95_MS=500` and `SLO_ERROR_RATE=0.01`. Treat them as a starting recommendation, not as a standard. Say why you chose them.
+
+**Step 5: Run the SLO gate.** With the server still running, run:
+
+```bash
+pytest -q loadtest/test_slo_gate.py
+```
+
+The gate starts Locust for 30 seconds by default. Set `GATE_RUN_TIME=10s` to shorten it. Set `TASKFLOW_URL` if your server is on another port. If no server answers, the tests are skipped, not passed. Read the skip message. It is a common mistake to think a skipped gate is a passing gate.
+
+**Step 6: Size the service.** Open `examples/ecs-capacity/sample-capacity.csv`. Each row has a service name, a peak rate, and the rate one task can handle within the SLO. The formula is `tasks = ceil(peak_rps / per_task_rps * headroom)`. Run the script from `examples/ecs-capacity`:
+
+```bash
+python capacity.py sample-capacity.csv
+python capacity.py sample-capacity.csv --headroom 1.5
+```
+
+Replace the `per_task_rps` value in a copy of the file with your own number. The script's comments say to measure that value with autoscaling turned off.
+
+## Example output
+
+:::info[Illustrative data]
+This is the output from the sample CSV, which contains invented numbers. Running the script on it prints the rows below.
+:::
+
+```text
+service,peak_rps,per_task_rps,headroom,tasks_needed
+task-service,1200,150,1.3,11
+project-service,300,120,1.3,4
+notification-service,80,40,1.5,3
+```
+
+Check one row by hand. For `task-service`, 1200 / 150 is 8. Eight times 1.3 is 10.4. Round up and you get 11.
+
+## Avoid this
+
+- **Reading a skipped gate as a pass.** Check the output for skipped tests.
+- **Measuring only the average.** Averages hide slow requests. Use p95.
+- **Running a long test to get a better number.** A longer run does not fix a bad scenario. Fix the scenario first.
+- **Using the sample CSV as real capacity.** Its numbers are invented.
+- **Writing results into the repo.** Keep CSV files in `/tmp`.
+
+## Done when
+
+- You have one Locust scenario that runs without errors.
+- You have one smoke run and one SLO sentence.
+- The SLO gate passes against your server, or you can say why it does not.
+- You have a task count for one service, and you can show the arithmetic.

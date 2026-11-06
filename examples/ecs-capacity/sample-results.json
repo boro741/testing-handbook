@@ -1,0 +1,118 @@
+{
+  "data_label": "Illustrative data",
+  "data_note": "All numbers in this file are invented for the handbook. Nothing here was measured on a real system.",
+  "report_title": "TaskFlow load test: task-service",
+  "run_id": "illustrative-run-02",
+  "previous_run_id": "illustrative-run-01",
+  "run_date": "2026-11-06",
+  "slo": {
+    "p95_ms": 300,
+    "max_error_rate_pct": 1.0
+  },
+  "system_under_test": {
+    "services": [
+      {
+        "name": "task-service",
+        "version": "2.4.0",
+        "task_size": "1 vCPU, 2 GB",
+        "task_count": 6,
+        "autoscaling": "off"
+      }
+    ],
+    "database": "RDS PostgreSQL, max_connections = 100",
+    "connection_pool": "20 connections per task (6 tasks = 120 possible)"
+  },
+  "environment": {
+    "region": "same AWS region as the ALB and ECS services",
+    "load_generator": "Locust script from chapter 61, one generator task",
+    "test_data": "synthetic users and projects, reset before each run"
+  },
+  "scenarios": [
+    {
+      "name": "baseline",
+      "rps": 50,
+      "duration_min": 10,
+      "traffic_profile": "Mix of 70% GET /api/tasks/{id}, 20% PUT, 10% POST /api/tasks"
+    },
+    {
+      "name": "peak",
+      "rps": 450,
+      "duration_min": 15,
+      "traffic_profile": "Same mix, rate taken from the busiest hour of last month's access logs"
+    }
+  ],
+  "results": [
+    {"scenario": "baseline", "rps": 50, "p50_ms": 62, "p95_ms": 118, "p99_ms": 190, "error_rate_pct": 0.0, "timeouts": 0},
+    {"scenario": "peak", "rps": 450, "p50_ms": 180, "p95_ms": 480, "p99_ms": 1100, "error_rate_pct": 0.6, "timeouts": 14}
+  ],
+  "infrastructure": {
+    "running_tasks": {"min": 6, "max": 6},
+    "task_cpu_avg_pct_peak": 38,
+    "task_memory_avg_pct_peak": 52,
+    "db_connections_in_use_peak": 100,
+    "db_connections_max": 100,
+    "db_pool_wait_p95_ms": 310,
+    "alb_target_response_time_p95_ms": 470,
+    "alb_unhealthy_host_count_max": 0,
+    "alb_http_5xx_target_count": 9,
+    "alb_http_5xx_elb_count": 5
+  },
+  "previous_run": {
+    "peak_p95_ms": 290,
+    "peak_error_rate_pct": 0.1,
+    "task_count": 6,
+    "db_connections_in_use_peak": 62,
+    "task_cpu_avg_pct_peak": 40
+  },
+  "bottlenecks": [
+    {
+      "hypothesis": "task CPU limits throughput",
+      "evidence": "Average task CPU peaked at 38% while p95 was 480 ms.",
+      "conclusion": "Rejected. CPU has room left."
+    },
+    {
+      "hypothesis": "Database connection pool is exhausted",
+      "evidence": "DB connections sat at 100 of 100 for about 8 minutes. Pool wait p95 was 310 ms. Previous run peaked at 62 connections.",
+      "conclusion": "Confirmed as the main cause. Release 2.4.0 raised the pool from 10 to 20 per task."
+    },
+    {
+      "hypothesis": "Downstream slowness on the ALB path",
+      "evidence": "Target response time p95 was 470 ms, which matches the app-side p95. ALB 5XX from ELB was 5, so the load balancer is not the cause.",
+      "conclusion": "Not the main cause."
+    }
+  ],
+  "recommendations": [
+    {
+      "area": "Database",
+      "action": "Keep the total pool (tasks x pool size) below max_connections. Set the pool back to 10 per task, or put RDS Proxy in front of the database.",
+      "owner": "Developer / DBA",
+      "priority": "P1",
+      "expected_impact": "Should remove the pool wait. Re-test to confirm the p95 falls back toward the previous 290 ms."
+    },
+    {
+      "area": "Application",
+      "action": "Check the task list query for slow SQL. Shorter queries free connections sooner.",
+      "owner": "Developer",
+      "priority": "P2",
+      "expected_impact": "Fewer connections held per request. Size of effect not yet measured."
+    },
+    {
+      "area": "Infrastructure",
+      "action": "Do not add tasks as the first fix. More tasks would open more connections to the same 100-connection limit and could make p95 worse. Re-test after the database fix, then decide on task count.",
+      "owner": "DevOps",
+      "priority": "P3",
+      "expected_impact": "Avoids a fix that would not help. Revisit after the re-test."
+    }
+  ],
+  "risks_and_limitations": [
+    "Only one task size and one task count were tested.",
+    "Peak traffic mix came from one month of access logs; real peaks may differ.",
+    "The load generator ran on one machine. Its own limits were not checked."
+  ],
+  "not_tested": [
+    "Stress test above 450 RPS",
+    "Soak test (for memory growth over hours)",
+    "Failover of an RDS instance",
+    "Other services (auth-service, project-service, notification-service)"
+  ]
+}

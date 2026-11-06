@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TaskFlow load test: task-service</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1d2330; --muted: #5b6475; --line: #d9dee8;
+    --card: #f5f7fb; --pass: #1c7c3a; --fail: #b42318; --warn: #9a6700;
+    --bar: #3b6fd8; --slo: #b42318;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12151c; --fg: #e6e9f0; --muted: #9aa3b5; --line: #2c3340;
+      --card: #1b2030; --pass: #4cc26b; --fail: #ff6b5e; --warn: #f0b429;
+      --bar: #6d9cff; --slo: #ff6b5e;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #12151c; --fg: #e6e9f0; --muted: #9aa3b5; --line: #2c3340;
+    --card: #1b2030; --pass: #4cc26b; --fail: #ff6b5e; --warn: #f0b429;
+    --bar: #6d9cff; --slo: #ff6b5e;
+  }
+  body { background: var(--bg); color: var(--fg); margin: 0; font: 16px/1.5 system-ui, sans-serif; }
+  main { max-width: 960px; margin: 0 auto; padding: 16px; }
+  h1 { font-size: 1.6rem; margin: 8px 0; }
+  h2 { font-size: 1.2rem; border-bottom: 1px solid var(--line); padding-bottom: 4px; margin-top: 32px; }
+  .banner { background: var(--warn); color: #111; font-weight: 600; padding: 10px 14px; border-radius: 6px; }
+  .verdict { display: inline-block; font-weight: 700; padding: 6px 14px; border-radius: 6px; color: #fff; }
+  .verdict.pass { background: var(--pass); }
+  .verdict.fail { background: var(--fail); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; margin: 8px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.95rem; display: block; overflow-x: auto; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; }
+  .bad { color: var(--fail); font-weight: 600; }
+  .good { color: var(--pass); font-weight: 600; }
+  .bar-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+  .bar-label { width: 90px; color: var(--muted); }
+  .bar-track { flex: 1; background: var(--line); border-radius: 4px; height: 16px; position: relative; }
+  .bar-fill { background: var(--bar); height: 16px; border-radius: 4px; }
+  .slo-line { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--slo); }
+  .bar-value { width: 80px; text-align: right; font-variant-numeric: tabular-nums; }
+  small, .muted { color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+
+<div class="banner">Illustrative data. All numbers in this file are invented for the handbook. Nothing here was measured on a real system.</div>
+
+<h1>TaskFlow load test: task-service <span class="muted">(Illustrative data)</span></h1>
+<p class="muted">Run illustrative-run-02 on 2026-11-06, compared with illustrative-run-01</p>
+
+<h2>1. Executive summary</h2>
+<div class="card">
+  <p>
+    Verdict:
+    <span class="verdict fail">FAIL</span>
+  </p>
+  <p>
+    SLO: p95 at or below 300 ms, error rate at or below 1.0%.
+    
+    Failed in: peak.
+    
+  </p>
+  
+</div>
+
+<h2>2. System under test</h2>
+<table>
+  <thead><tr><th>Service</th><th>Version</th><th>Task size</th><th>Task count</th><th>Auto scaling</th></tr></thead>
+  <tbody>
+  
+    <tr><td>task-service</td><td>2.4.0</td><td>1 vCPU, 2 GB</td><td>6</td><td>off</td></tr>
+  
+  </tbody>
+</table>
+<p>Database: RDS PostgreSQL, max_connections = 100. Connection pool: 20 connections per task (6 tasks = 120 possible).</p>
+
+<h2>3. Test environment and load generator</h2>
+<ul>
+  <li>Region: same AWS region as the ALB and ECS services</li>
+  <li>Load generator: Locust script from chapter 61, one generator task</li>
+  <li>Test data: synthetic users and projects, reset before each run</li>
+</ul>
+
+<h2>4. Scenarios</h2>
+<table>
+  <thead><tr><th>Scenario</th><th>Target RPS</th><th>Duration (min)</th><th>How the traffic was derived</th></tr></thead>
+  <tbody>
+  
+    <tr><td>baseline</td><td>50</td><td>10</td><td>Mix of 70% GET /api/tasks/{id}, 20% PUT, 10% POST /api/tasks</td></tr>
+  
+    <tr><td>peak</td><td>450</td><td>15</td><td>Same mix, rate taken from the busiest hour of last month&#39;s access logs</td></tr>
+  
+  </tbody>
+</table>
+
+<h2>5. Results</h2>
+<table>
+  <thead><tr><th>Scenario</th><th>RPS</th><th>p50 (ms)</th><th>p95 (ms)</th><th>p99 (ms)</th><th>Error rate (%)</th><th>Timeouts</th><th>SLO</th></tr></thead>
+  <tbody>
+  
+    <tr>
+      <td>baseline</td><td>50</td><td>62</td>
+      <td class="good">118</td>
+      <td>190</td>
+      <td class="good">0.0</td>
+      <td>0</td>
+      <td class="good">PASS</td>
+    </tr>
+  
+    <tr>
+      <td>peak</td><td>450</td><td>180</td>
+      <td class="bad">480</td>
+      <td>1100</td>
+      <td class="good">0.6</td>
+      <td>14</td>
+      <td class="bad">FAIL</td>
+    </tr>
+  
+  </tbody>
+</table>
+<h3>p95 against the SLO</h3>
+
+<div class="bar-row">
+  <span class="bar-label">baseline</span>
+  <div class="bar-track">
+    <div class="bar-fill" style="width: 24.6%"></div>
+    <div class="slo-line" style="left: 62.5%"></div>
+  </div>
+  <span class="bar-value">118 ms</span>
+</div>
+
+<div class="bar-row">
+  <span class="bar-label">peak</span>
+  <div class="bar-track">
+    <div class="bar-fill" style="width: 100.0%"></div>
+    <div class="slo-line" style="left: 62.5%"></div>
+  </div>
+  <span class="bar-value">480 ms</span>
+</div>
+
+<p class="muted">The red line marks the SLO (300 ms). Bars are scaled to the slowest scenario.</p>
+
+<h2>6. Infrastructure</h2>
+<table>
+  <tbody>
+    <tr><th>Running tasks (min / max)</th><td>6 / 6</td></tr>
+    <tr><th>Task CPU, average at peak</th><td>38%</td></tr>
+    <tr><th>Task memory, average at peak</th><td>52%</td></tr>
+    <tr><th>DB connections in use, peak / max</th><td>100 / 100</td></tr>
+    <tr><th>DB pool wait, p95</th><td>310 ms</td></tr>
+    <tr><th>ALB target response time, p95</th><td>470 ms</td></tr>
+    <tr><th>ALB unhealthy hosts, max</th><td>0</td></tr>
+    <tr><th>ALB 5XX from targets / from ELB</th><td>9 / 5</td></tr>
+  </tbody>
+</table>
+
+<h2>7. Comparison with previous baseline</h2>
+
+<table>
+  <thead><tr><th>Metric</th><th>Previous</th><th>Current</th><th>Delta</th></tr></thead>
+  <tbody>
+  
+    <tr><td>Peak p95 latency (ms)</td><td>290</td><td>480</td><td>+190</td></tr>
+  
+    <tr><td>Peak error rate (%)</td><td>0.1</td><td>0.6</td><td>+0.5</td></tr>
+  
+    <tr><td>Task count</td><td>6</td><td>6</td><td>+0</td></tr>
+  
+    <tr><td>Task CPU, average at peak (%)</td><td>40</td><td>38</td><td>-2</td></tr>
+  
+    <tr><td>DB connections in use, peak</td><td>62</td><td>100</td><td>+38</td></tr>
+  
+  </tbody>
+</table>
+
+
+<h2>8. Bottleneck analysis</h2>
+
+<div class="card">
+  <p><strong>Hypothesis:</strong> task CPU limits throughput</p>
+  <p><strong>Evidence:</strong> Average task CPU peaked at 38% while p95 was 480 ms.</p>
+  <p><strong>Conclusion:</strong> Rejected. CPU has room left.</p>
+</div>
+
+<div class="card">
+  <p><strong>Hypothesis:</strong> Database connection pool is exhausted</p>
+  <p><strong>Evidence:</strong> DB connections sat at 100 of 100 for about 8 minutes. Pool wait p95 was 310 ms. Previous run peaked at 62 connections.</p>
+  <p><strong>Conclusion:</strong> Confirmed as the main cause. Release 2.4.0 raised the pool from 10 to 20 per task.</p>
+</div>
+
+<div class="card">
+  <p><strong>Hypothesis:</strong> Downstream slowness on the ALB path</p>
+  <p><strong>Evidence:</strong> Target response time p95 was 470 ms, which matches the app-side p95. ALB 5XX from ELB was 5, so the load balancer is not the cause.</p>
+  <p><strong>Conclusion:</strong> Not the main cause.</p>
+</div>
+
+
+<h2>9. Recommendations</h2>
+<p class="muted">Recommendations for humans to review. Nothing is applied automatically.</p>
+
+  
+  
+  <h3>Infrastructure</h3>
+  <table>
+    <thead><tr><th>Action</th><th>Owner</th><th>Priority</th><th>Expected impact</th></tr></thead>
+    <tbody>
+    
+      <tr><td>Do not add tasks as the first fix. More tasks would open more connections to the same 100-connection limit and could make p95 worse. Re-test after the database fix, then decide on task count.</td><td>DevOps</td><td>P3</td><td>Avoids a fix that would not help. Revisit after the re-test.</td></tr>
+    
+    </tbody>
+  </table>
+  
+
+  
+  
+  <h3>Application</h3>
+  <table>
+    <thead><tr><th>Action</th><th>Owner</th><th>Priority</th><th>Expected impact</th></tr></thead>
+    <tbody>
+    
+      <tr><td>Check the task list query for slow SQL. Shorter queries free connections sooner.</td><td>Developer</td><td>P2</td><td>Fewer connections held per request. Size of effect not yet measured.</td></tr>
+    
+    </tbody>
+  </table>
+  
+
+  
+  
+  <h3>Database</h3>
+  <table>
+    <thead><tr><th>Action</th><th>Owner</th><th>Priority</th><th>Expected impact</th></tr></thead>
+    <tbody>
+    
+      <tr><td>Keep the total pool (tasks x pool size) below max_connections. Set the pool back to 10 per task, or put RDS Proxy in front of the database.</td><td>Developer / DBA</td><td>P1</td><td>Should remove the pool wait. Re-test to confirm the p95 falls back toward the previous 290 ms.</td></tr>
+    
+    </tbody>
+  </table>
+  
+
+
+<h2>10. Risks, limitations and what was NOT tested</h2>
+<h3>Risks and limitations</h3>
+<ul><li>Only one task size and one task count were tested.</li><li>Peak traffic mix came from one month of access logs; real peaks may differ.</li><li>The load generator ran on one machine. Its own limits were not checked.</li></ul>
+<h3>Not tested</h3>
+<ul><li>Stress test above 450 RPS</li><li>Soak test (for memory growth over hours)</li><li>Failover of an RDS instance</li><li>Other services (auth-service, project-service, notification-service)</li></ul>
+
+</main>
+</body>
+</html>

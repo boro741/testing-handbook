@@ -1,0 +1,60 @@
+---
+title: "Template: estimation worksheet"
+sidebar_position: 8
+description: A worksheet for estimating test effort per feature with a three-point estimate, with a filled TaskFlow example.
+part: 98
+summary: Estimation worksheet that records best, likely and worst effort per feature and test type, and turns them into one range.
+tags: [template, estimation, planning]
+reading_time: 2
+related: ["/working-in-teams/test-estimation-in-practice", "/working-in-teams/testing-in-agile-teams"]
+---
+
+<TLDR>
+Estimate test effort per feature and per test type, using three values: best, likely and worst. Combine them with a formula to get one expected figure and a range. Show the range, not one number.
+</TLDR>
+
+## When to use it
+
+Use it during planning, before a sprint or release is committed. Fill one row per feature and test type. Keep the worksheet with the plan so you can compare estimates with actual effort later.
+
+## Template
+
+```markdown
+| Feature | Test type | Best (days) | Likely (days) | Worst (days) | Expected (days) |
+|---|---|---|---|---|---|
+| | | | | | |
+
+Expected = (Best + 4 x Likely + Worst) / 6
+Total range: sum of Best to sum of Worst. Quote Expected as the planning figure.
+Assumptions:
+- 
+```
+
+## Filled example
+
+:::info[Illustrative data]
+The days below are made up for this example. They are not measured effort for TaskFlow.
+:::
+
+```markdown
+| Feature | Test type | Best (days) | Likely (days) | Worst (days) | Expected (days) |
+|---|---|---|---|---|---|
+| Task title rules | API tests, boundary tests | 1 | 2 | 3 | 2.0 |
+| Status flow | API tests, state tests | 2 | 3 | 5 | 3.2 |
+| Project membership and assignment | API tests, access tests | 1 | 2 | 4 | 2.2 |
+| Login | API tests, UI smoke | 0.5 | 1 | 2 | 1.1 |
+
+Expected total: 8.5 days. Range: 4.5 to 14 days.
+Assumptions:
+- The test environment is up for the whole sprint.
+- The API stays the same as in the reference. No new endpoints.
+- One tester, with a developer available for questions.
+```
+
+Check the arithmetic: for status flow, (2 + 4 x 3 + 5) / 6 = 19 / 6 = 3.2.
+
+## Tips
+
+- Write the assumptions next to the numbers. Most estimate errors come from an assumption nobody wrote down.
+- The worst case should describe a real risk, such as an unstable environment, not a general fear.
+- Compare Expected with actual effort after each sprint, and adjust the next estimate.

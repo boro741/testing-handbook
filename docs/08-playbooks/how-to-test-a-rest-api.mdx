@@ -1,0 +1,59 @@
+---
+title: How to test a REST API
+sidebar_position: 45
+description: A numbered checklist for testing a REST API, using the TaskFlow API and its existing pytest suite as the worked example.
+part: 8
+summary: Step-by-step checklist for testing a REST API, with TaskFlow's pytest suite as a reference.
+tags: [playbook, checklist, api, rest, pytest]
+reading_time: 6
+related: ["/testing-by-layer/api-testing", "/testing-by-layer/integration-and-contract-testing", "/test-design/equivalence-partitioning-and-boundaries"]
+---
+
+<TLDR>
+Use this checklist to test each endpoint for its success path, its error codes, its rules and its permissions. Check the status code and the response body, not only one of them. The TaskFlow test suite in `examples/taskflow/tests/test_taskflow_api.py` already covers many of these steps.
+</TLDR>
+
+## Checklist
+
+1. **Read the contract.** Find each endpoint, its inputs, its outputs and its error codes. For TaskFlow, the list is in [the TaskFlow reference](/start-here/taskflow-reference). The local app also serves its OpenAPI docs at `/docs`.
+2. **Test authentication.** No token gives 401. A wrong token gives 401. A valid login gives a token. See [API testing](/testing-by-layer/api-testing).
+3. **Test the happy path for each endpoint.** Check the status code, then the body fields.
+4. **Test input boundaries.** For the title, use 0, 1, 100 and 101 characters. For priority, test each allowed value and a few bad ones. See [equivalence partitioning and boundaries](/test-design/equivalence-partitioning-and-boundaries).
+5. **Test business rules.** Invalid status moves give 409. Assigning a non-member gives 422. A non-member of the project gives 403.
+6. **Test missing data.** An unknown task ID gives 404.
+7. **Test the delete path.** Delete returns 204. A later read returns 404.
+8. **Check the error body.** It should say what went wrong, in a stable shape.
+9. **Run the suite.** From `examples/taskflow/`, run `pytest -q`.
+10. **Fill the gaps.** Add tests for what the suite does not yet check.
+11. **Keep tests independent.** Each test should set up its own data and not depend on the order of other tests.
+
+## Example: a manual check with curl
+
+Log in and keep the token. Then create a task and look at the status code.
+
+```bash
+TOKEN=$(curl -s -X POST http://localhost:8000/api/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"alice","password":"alice-pass"}' \
+  | python3 -c 'import sys,json; print(json.load(sys.stdin)["token"])')
+
+curl -i -X POST http://localhost:8000/api/tasks \
+  -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"title":"Demo task","priority":"LOW","project_id":1}'
+```
+
+Expect `201 Created` with the new task in the body. The meaning of each status code is defined in [RFC 9110](https://www.rfc-editor.org/info/rfc9110/). Checked 2026-11-06.
+
+## Gaps to fill
+
+The local suite has 19 tests. Two gaps are worth closing first:
+
+- **Reading a task as a non-member.** The tests check that a non-member cannot create a task. Add a test that a non-member gets 403 from `GET /api/tasks/{id}`.
+- **Changing a task as a non-member.** Add a test for `PUT /api/tasks/{id}` by a non-member.
+
+## Done when
+
+- Every endpoint has at least one test for success and one for each documented error.
+- Each business rule has a test that would fail if the rule broke.
+- The suite passes against a clean database.

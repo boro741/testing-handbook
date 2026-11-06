@@ -1,0 +1,13 @@
+# Core test packages: everything the offline suite (`pytest -q`) and the load tests need.
+-r requirements.txt
+pytest==8.3.4
+httpx==0.28.1
+locust==2.32.4
+
+# BDD, property-based and contract tests (these folders are part of `pytest -q`)
+pytest-bdd==9.0.1
+hypothesis==6.170.15
+pact-python==4.2.0
+
+# Heavier, optional tools live in requirements-extra.txt:
+#   pip install -r requirements-extra.txt

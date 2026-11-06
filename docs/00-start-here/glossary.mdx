@@ -1,0 +1,146 @@
+---
+title: Glossary
+sidebar_position: 3
+description: Short definitions of the terms used across the handbook.
+part: 0
+summary: Plain-English definitions of testing and performance terms.
+tags: [glossary]
+reading_time: 5
+related: []
+---
+
+<TLDR>
+Quick definitions. If a word in a chapter is unclear, look it up here.
+</TLDR>
+
+| Term | Meaning |
+|---|---|
+| **Acceptance criteria** | The conditions a feature must meet before it is accepted. |
+| **Accessibility tree** | The text description of a page that screen readers and Playwright MCP use. |
+| **Assertion** | A check in a test. If it is false, the test fails. |
+| **At-least-once delivery** | A message may arrive more than once, so the receiver must handle duplicates. |
+| **Baseline** | A recorded, known-good test run that later runs are compared against. |
+| **Baseline image** | The approved screenshot that later runs of a visual test are compared against. |
+| **BDD (behaviour-driven development)** | Writing tests as plain-language examples of behaviour that the whole team agrees on first. |
+| **Blast radius** | How much of the system, or how many users, a defect or failure can reach. |
+| **BOLA (broken object-level authorization)** | A user reads or changes another user's record just by changing an ID in the request. |
+| **Boundary value** | A value at the edge of an allowed range, such as 1 and 100 for a 1–100 character title. |
+| **Builder** | A helper that creates test data with sensible defaults, so each test sets only what it needs. |
+| **Canary release** | A new version gets a small share of traffic first, so problems show up before a full rollout. |
+| **Cascading failure** | One slow or failing service makes its callers fail too, and the problem spreads. |
+| **Chaos engineering** | Breaking parts of a system on purpose to see how it reacts. |
+| **Charter** | A short mission for one exploratory testing session. |
+| **CI/CD** | Continuous integration and continuous delivery: build, test and ship code automatically. |
+| **Circuit breaker** | A pattern that stops calls to a failing dependency for a while, then tests whether it has recovered. |
+| **Cold start** | The delay when a serverless function starts a new copy before it can handle a request. |
+| **Collection (Postman)** | A saved set of API requests with checks, which can be run from the command line. |
+| **Concurrency** | The number of requests in progress at the same moment. |
+| **Consumer-driven contract** | A contract written by the consumer that lists only the calls it uses. |
+| **Contract test** | A test that checks two services agree on the shape of their messages. |
+| **Control total** | A total the pipeline reports, which you compare with the total in the target table. |
+| **Cooldown** | The wait time between two scaling actions, so the system does not flap. |
+| **Core Web Vitals** | Google's user-experience metrics: LCP (loading), INP (responsiveness) and CLS (visual stability). |
+| **Correlation ID** | An ID sent with a request and written into each log line, so one search finds related events. |
+| **Coverage** | The share of code, requirements or risks that tests touch. |
+| **DAST** | Dynamic application security testing: attacking a running application. |
+| **Dead-letter queue** | Where messages go after repeated failed processing, so they can be checked later. |
+| **Decision table** | A table of every combination of conditions and the expected result for each. |
+| **Deployment (Kubernetes)** | A Kubernetes object that keeps a set of identical pods running and updates them. |
+| **Device farm** | A service that hosts real and virtual devices so you can run tests on them remotely. |
+| **DORA metrics** | Five delivery measures: deployment frequency, lead time for changes, change failure rate, failed deployment recovery time and deployment rework rate. |
+| **Drift** | Change over time between live data and the data a model was trained on. |
+| **E2E test** | A test that drives the whole system the way a user would. |
+| **Emulator / simulator** | Software on a computer that mimics a phone or tablet. |
+| **Entry criteria** | Conditions that must be true before testing starts. |
+| **Equivalence partition** | A group of inputs that should all be handled the same way. |
+| **Error budget** | How many failures an SLO allows in a period. |
+| **ETL (extract, transform, load)** | Moving data from a source into a target table: pull it out, clean or reshape it, then load it. |
+| **Exit criteria** | Conditions that must be true before testing stops. |
+| **Fairness slice** | A quality check for one group of users, to see if a model works worse for them. |
+| **Fake** | A simple but working replacement for a dependency, such as an in-memory database. |
+| **Fault injection** | Deliberately breaking a dependency to see how the system behaves. |
+| **Feature flag** | A switch that turns a feature on or off without a new deployment. |
+| **Flaky test** | A test that sometimes passes and sometimes fails with no code change. |
+| **Freshness** | How recently a table was loaded. |
+| **Gherkin** | The Given / When / Then format used to write BDD scenarios. |
+| **Golden signals** | Four measures: latency, traffic, errors and saturation. |
+| **Headroom** | Spare capacity kept above the expected peak, as a safety margin. |
+| **Held-out test set** | Data kept out of training and tuning, used only to score a model. |
+| **Idempotent** | An operation that gives the same result if you run it twice. |
+| **Index** | A sorted copy of one or more columns that speeds up lookups in a database. |
+| **Infrastructure as code (IaC)** | Describing servers, networks and services in version-controlled text files that a tool builds from. |
+| **Internationalization (i18n)** | Building a product so it can support many languages and regions. |
+| **Jank** | Frames that draw too slowly, so scrolling or animation stutters. |
+| **Killed / survived mutant** | A mutant that a test caught (killed) or that no test caught (survived). |
+| **Kubernetes service** | A stable address and load balancing for a set of pods. |
+| **Latency** | How long a request takes. Usually reported as percentiles (p50, p95, p99). |
+| **Little's Law** | In a stable system, concurrency = throughput × response time. |
+| **Liveness probe** | A Kubernetes check that decides whether a pod should be restarted. |
+| **LLM-as-a-judge** | A model that scores another model's output against a rubric. |
+| **Load generator** | The tool that sends traffic, such as Locust or k6. |
+| **Localization (l10n)** | Adapting a product to one language and region. |
+| **MCP (Model Context Protocol)** | A standard way for AI clients to call tools and read data from other systems. |
+| **Mock** | A test double that records how it was called, so the test can check those calls. |
+| **Mock / stub** | A fake dependency used in a test. |
+| **Mutant** | A small deliberate change to code, made by a mutation testing tool to see if the tests notice. |
+| **p95** | The response time that 95% of requests are faster than. |
+| **Pact file** | The contract a consumer test writes down: the calls it makes and the replies it expects. |
+| **Page Object** | A class that wraps one screen behind user-level actions, so tests do not repeat locators. |
+| **Pairwise testing** | Covering every pair of parameter values with a small set of test runs. |
+| **Parameterized query** | A database query that sends the command and the values separately, which stops SQL injection. |
+| **Partial batch response** | A reply from a Lambda function that lists only the messages that failed, so the rest are not retried. |
+| **Penetration test** | A manual attack by a skilled tester, within agreed scope. |
+| **Per-task RPS** | The maximum requests per second one task can serve while meeting the SLO. |
+| **PERT estimate** | A three-point estimate: (best + 4 × likely + worst) / 6. |
+| **Pod (Kubernetes)** | The smallest unit Kubernetes runs: one or more containers that share an address. |
+| **Prompt injection** | Text in an input that tries to override a model's rules. |
+| **Property-based testing** | Testing a rule against many generated inputs instead of a few hand-picked ones. |
+| **Pseudo-localization** | Testing with fake, longer, accented text to find layout and encoding problems early. |
+| **RAG (retrieval-augmented generation)** | An AI pattern where the model answers using documents fetched at query time. |
+| **Readiness probe** | A Kubernetes check that decides whether a pod can receive traffic. |
+| **Reconciliation** | Checking that row counts and totals from the source match what was loaded, plus what was rejected. |
+| **Red-green-refactor** | The TDD loop: write a failing test, make it pass, then clean up the code. |
+| **Regression** | A bug that appears in code that used to work. |
+| **Retest (confirmation testing)** | Running a test that failed again after the fix, to confirm the fix works. |
+| **RTL (right-to-left)** | Scripts such as Arabic and Hebrew that are written from right to left. |
+| **Sanity test** | A narrow check of one change or fix, to see if it is reasonable to test further. |
+| **SAST** | Static application security testing: checking source code without running it. |
+| **Scale-out / scale-in** | Adding or removing copies of a service (for example ECS tasks). |
+| **Self-healing** | Automatic repair of broken locators or steps in a test. |
+| **Service (ECS)** | A group of identical tasks kept running at a desired count. |
+| **Service virtualization** | A fake server that speaks the real protocol, used in place of a service you do not control. |
+| **Severity / priority** | Severity is the impact of a defect. Priority is the order in which to fix it. |
+| **Shift-left** | Testing earlier in the development process. |
+| **Shift-right** | Testing in production or after release, using real traffic and monitoring. |
+| **Shrinking** | What a property-based tool does after a failure: reduce the input to the smallest case that still fails. |
+| **SLI / SLO / SLA** | SLI: what you measure. SLO: the target you set. SLA: the promise you make to customers. |
+| **Smoke test** | A short test that checks the basics work before deeper testing. |
+| **Soak test** | A long load test that finds slow leaks, such as memory growth. |
+| **Spy** | A real object that also records how it was called. |
+| **SQL injection** | Input that changes the meaning of a database query. |
+| **Startup probe** | A Kubernetes check that holds back the other probes until a slow app has started. |
+| **State transition testing** | Testing the allowed and blocked moves between states. |
+| **Static testing** | Examining code or documents without running them, for example linting or review. |
+| **Step definition** | The code that runs for one Gherkin line. |
+| **Synthetic check** | A scripted user journey run on a schedule against a live system. |
+| **Target tracking** | Scaling that keeps a metric near a chosen target value. |
+| **Task (ECS)** | One running copy of a container. |
+| **Task definition** | The recipe for a task: image, CPU, memory, ports. |
+| **Task size** | The fixed CPU and memory given to each task. |
+| **TDD (test-driven development)** | Writing the test first, then just enough code to pass it. |
+| **Terraform** | An infrastructure-as-code tool whose files are written in HCL. |
+| **Test double** | A stand-in for a dependency in a test: a dummy, stub, fake, mock or spy. |
+| **Think time** | The pause a simulated user waits between requests. |
+| **Three amigos** | A short refinement meeting with a business analyst, a developer and a tester. |
+| **Throughput** | How much work the system completes per second, such as requests per second. |
+| **Toxic** | A fault added to a Toxiproxy proxy, such as latency or a dropped connection. |
+| **Toxiproxy** | An open source TCP proxy that injects network faults through an HTTP API. |
+| **Traceability** | Links from each requirement to the tests that check it, and back. |
+| **Traffic profile** | A workload model written as numbers that a load tool can run. |
+| **UAT (user acceptance testing)** | Final checks by the business or real users that the product meets their needs. |
+| **USE / RED** | Two checklists for finding bottlenecks. USE: Utilisation, Saturation, Errors (for resources). RED: Rate, Errors, Duration (for services). |
+| **Validation** | Checking that the product meets real user needs. |
+| **Vanity metric** | A number that looks good but says little about quality, such as raw test count. |
+| **Verification** | Checking that the product matches its specification. |
+| **Workload model** | A description of how real users behave, used to build a realistic load test. |
+| **XSS (cross-site scripting)** | An attack where script is injected into a page that other users then load. |

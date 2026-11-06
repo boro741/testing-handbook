@@ -1,0 +1,115 @@
+---
+title: Testing machine learning models
+sidebar_position: 16.2
+description: "How to test a machine learning model with pytest: data checks, quality thresholds, regression between versions, fairness slices and drift."
+part: 16
+summary: A model has no single right answer, so tests check the data, set quality thresholds, compare versions and watch for drift over time.
+tags: [machine-learning, model-testing, pytest, scikit-learn, drift]
+reading_time: 7
+related: ["/testing-by-layer/backend-and-database-testing", "/other-domains/data-and-etl-testing", "/fundamentals/test-levels-and-types"]
+---
+
+<TLDR>
+Testing a machine learning model is different from testing ordinary code. The output is a prediction, not a fixed answer, and the behaviour depends on the data it learned from. Good tests check the data, set a quality bar the model must clear, compare each new version with the last one, and watch for changes in the data after release.
+</TLDR>
+
+## What and why
+
+Ordinary code gives the same output for the same input, and the right output is written down. A model is different in three ways:
+
+- **Data matters as much as code.** A model learns from examples. If the examples are wrong, the model is wrong, even when the code has no bugs.
+- **Behaviour is statistical.** A model is right most of the time, not always. You test against a bar, such as "at least 90% correct", not against exact answers.
+- **There is often no single right answer.** A recommendation or a risk score is a judgement. Tests check that the judgement stays within agreed limits.
+
+Retraining also changes behaviour, so testing has to cover versions, not just one model.
+
+## The five kinds of checks
+
+| Check | Plain question it answers |
+|---|---|
+| Data quality | Is the training and test data complete, valid and the right size? |
+| Quality threshold | Does the model clear an agreed bar on held-out data? |
+| Regression | Is the new version at least as good as the last one on the same data? |
+| Fairness slices | Does quality hold for each important group, not just on average? |
+| Drift | Has the live data changed from what the model was trained on? |
+
+## Checks you can write as pytest tests
+
+Some checks are plain pytest tests that run in seconds:
+
+- **Data checks.** Row counts, no missing values in features, and expected class counts.
+- **Threshold.** Accuracy, or another metric, must be at or above a fixed number on a fixed test split.
+- **Determinism.** The same seed and the same data should give the same predictions. If not, a bug is hiding in the training code.
+- **Output shape and labels.** One prediction per row, and only labels the model is allowed to return.
+- **No NaN.** Predicted probabilities must be finite numbers.
+- **Boundary-style checks.** A typical input for a known class should get that class back.
+
+Regression and fairness checks follow the same pattern: compute a metric for the old and new model on the same data, then assert on the difference or on each slice.
+
+Drift is different. It compares live data with the training data on a schedule. Treat it as monitoring, not as a unit test.
+
+## TaskFlow example
+
+TaskFlow does not use machine learning. As a comparison, imagine a model that suggests a priority for each new task. A threshold test would require a reviewed set of labelled tasks to match at least 90% of the time. A regression test would block a new version that is worse than the current one on that set. The allowed priorities are in the [TaskFlow reference](/start-here/taskflow-reference).
+
+The runnable example is in `examples/ml-testing/`. It trains a small logistic regression on the built-in iris flower dataset with `random_state=0`, and it saves nothing to the repository. `tests/test_model.py` has 8 tests.
+
+Two of them, to show the style:
+
+```python
+def test_accuracy_is_above_threshold():
+    model, X_test, y_test = train()
+    assert model.score(X_test, y_test) >= ACCURACY_THRESHOLD
+
+
+def test_same_seed_gives_same_predictions():
+    model_a, X_test, _ = train(seed=0)
+    model_b, _, _ = train(seed=0)
+    assert np.array_equal(model_a.predict(X_test), model_b.predict(X_test))
+```
+
+The model is a scikit-learn pipeline: a `StandardScaler` followed by a `LogisticRegression`. The scaler is fitted inside the pipeline, so the test data does not leak into training. See the [scikit-learn model evaluation guide](https://scikit-learn.org/stable/modules/model_evaluation.html) for the metrics used here.
+
+Run it from the folder:
+
+```bash
+cd examples/ml-testing
+python3 -m venv .venv && . .venv/bin/activate
+pip install scikit-learn pytest
+pytest -q
+```
+
+Output from a real run (scikit-learn 1.9.1, pytest 9.2.0, Python 3.12):
+
+```text
+........                                                                 [100%]
+8 passed in 4.03s
+```
+
+:::info[Illustrative data]
+The accuracy printed by `train.py` (0.978 on the 30% test split) is for this one run of a toy dataset. It is not a benchmark, and a real model needs thresholds set from its own risk.
+:::
+
+The "average flower of each species is predicted as that species" test is a boundary-style check. It is a typical point, not a proof.
+
+## Do this
+
+- Fix the random seed for training and for the test split, so a failure can be reproduced.
+- Keep a held-out test set that is never used for tuning. Otherwise the threshold test tells you little.
+- Set thresholds with the product owner, and write down why each number was chosen.
+- Compare each new version with the current one on the same data, and block a release that is clearly worse.
+- Check quality for each important group, and report the slices as well as the average.
+- Recommendation: monitor drift on live inputs and alert on a clear change, then decide with a person whether to retrain.
+
+## Avoid this
+
+- Testing only the average score. A model can be strong on average and weak for one group.
+- Tuning the model on the test set, then reporting the test score as if it were new.
+- Asserting exact predictions for a model that is expected to change. Test ranges and rules instead.
+- Treating drift as a one-off check that runs before release and never again.
+
+## Further reading
+
+- [scikit-learn: model evaluation](https://scikit-learn.org/stable/modules/model_evaluation.html) (opened 2026-11-06, the page loads).
+- [Data and ETL testing](/other-domains/data-and-etl-testing) covers the data checks that feed a model.
+- [Backend and database testing](/testing-by-layer/backend-and-database-testing) covers the stores behind a model service.

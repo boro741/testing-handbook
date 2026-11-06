@@ -1,0 +1,66 @@
+---
+title: Manual vs automated testing
+sidebar_position: 5
+description: When to test by hand, when to automate, and a simple way to choose for each test.
+part: 1
+summary: Manual testing uses human judgement. Automated testing repeats known checks. Choose by repeat rate and stability.
+tags: [fundamentals, automation, manual]
+reading_time: 4
+related: [/docs/automation-engineering/test-automation-pyramid]
+---
+
+<TLDR>
+Manual testing means a person runs the steps and judges the result. Automated testing means a script runs the steps and checks the result. Automate checks you repeat often and that are stable. Test by hand when judgement or discovery matters.
+</TLDR>
+
+## What and why
+
+Both kinds of testing find defects. They are good at different things.
+
+- **Manual** testing is good for new features, exploring, and checking how something looks or feels.
+- **Automated** testing is good for repeated checks, such as "does login still work after every change?"
+
+Automation does not replace testers. It frees them to spend time on the work that needs a human.
+
+## How it works
+
+Use these questions for each test:
+
+| Question | If yes | If no |
+|---|---|---|
+| Will this run many times? | Automate | Keep it manual |
+| Is the expected result clear and fixed? | Automate | Keep it manual |
+| Does it change every week? | Keep manual for now | Automate |
+| Does it need human judgement, such as "does this feel right"? | Keep manual | Automate |
+
+Recommendation: automate the checks that run on every change first. Those give the fastest return.
+
+## When to use it (and when not to)
+
+| Automate when | Keep it manual when |
+|---|---|
+| A rule must be checked on every build | You are learning a new feature |
+| The check is fast and deterministic | The UI is still changing a lot |
+| A person would get bored repeating it | You are checking usability or visual quality |
+
+## TaskFlow example
+
+- **Automate:** the 19 pytest tests in `examples/taskflow/tests/` check rules such as title length, priority values and the status flow. They run with one command and give the same result each time.
+- **Keep manual:** a tester opens the TaskFlow web UI and asks whether the "reopen" button is easy to find. A script cannot judge that.
+
+## Do this
+
+- Start by automating smoke tests and API rule checks.
+- Make each automated test answer one question.
+- Keep manual test notes short and clear, so another tester can repeat them.
+- Review automated tests when the feature changes.
+
+## Avoid this
+
+- Automating a test you do not understand yet.
+- Automating a test that is flaky. Fix it or remove it first.
+- Assuming automation is free. It needs code, time and upkeep.
+
+## Further reading
+
+See [The test automation pyramid](/automation-engineering/test-automation-pyramid) to decide which layer to automate first.

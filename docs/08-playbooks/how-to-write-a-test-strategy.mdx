@@ -1,0 +1,42 @@
+---
+title: How to write a test strategy for a new project
+sidebar_position: 48
+description: A numbered checklist for writing a test strategy at the start of a new project, linked to the chapter behind each section.
+part: 8
+summary: Step-by-step checklist for writing a test strategy for a new project.
+tags: [playbook, checklist, strategy, planning]
+reading_time: 6
+related: ["/planning-strategy/test-strategy-vs-plan", "/planning-strategy/risk-based-testing", "/modern-quality-engineering/quality-metrics"]
+---
+
+<TLDR>
+Use this checklist to write a short test strategy for a new project. A strategy says how testing will reduce the main risks. It is shorter and more stable than a plan. Keep it to a few pages, and review it each release.
+</TLDR>
+
+## Checklist
+
+1. **State the purpose and scope.** What product is it, who uses it, and what is out of scope? Keep this to a paragraph. See [test strategy vs test plan](/planning-strategy/test-strategy-vs-plan).
+2. **List the main risks.** Write each risk, its likely impact and its likelihood. Use this list to set the test effort. See [risk-based testing](/planning-strategy/risk-based-testing).
+3. **Set quality goals.** Agree on measurable targets, such as an error budget or a response-time goal. Mark any target that is a team choice as a Recommendation. See [performance requirements and SLOs](/performance-fundamentals/performance-requirements-and-slos).
+4. **Choose test levels and types.** Which levels (unit, API, UI, end-to-end) and which types (functional, security, accessibility, performance) will you use? See [test levels and types](/fundamentals/test-levels-and-types).
+5. **Set the automation balance.** Most checks at the lower levels. Few at the top. See [the test automation pyramid](/automation-engineering/test-automation-pyramid).
+6. **Plan environments and data.** Name each environment, what it is for and how its data is reset. See [test environments](/modern-quality-engineering/test-environments) and [test data management](/automation-engineering/test-data-management).
+7. **Define entry and exit criteria.** When can testing start, and when can a release go out? See [entry and exit criteria](/planning-strategy/entry-and-exit-criteria).
+8. **Plan defect handling.** Severity levels, who triages, and how fast. See [defect management](/planning-strategy/defect-management).
+9. **Plan CI.** Which checks run on each change, and which run nightly. See [CI/CD and continuous testing](/automation-engineering/ci-cd-and-continuous-testing).
+10. **Choose metrics.** Pick three to five. See [quality metrics and KPIs](/modern-quality-engineering/quality-metrics).
+11. **Name the owners.** Who owns each area, and who decides on release?
+12. **Set a review date.** Review the strategy after each major release, and update it when the risks change.
+
+## Example: TaskFlow's first strategy
+
+- **Risks:** wrong access rules (someone sees another project's tasks), wrong status moves, and slow task reads.
+- **Levels:** API tests for every rule, a small set of UI tests for the main journeys, and a short performance check on the read endpoint.
+- **Environments:** local SQLite for fast runs, Postgres via Docker for release checks, and a shared staging system for end-to-end runs. See [the TaskFlow reference](/start-here/taskflow-reference).
+- **Exit criteria:** all access-rule tests pass, and no open high-severity defects.
+
+## Done when
+
+- Each risk has at least one planned check.
+- The strategy fits on a few pages and names its owners.
+- The team has agreed on the review date.

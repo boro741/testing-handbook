@@ -1,0 +1,78 @@
+---
+title: "Template: bug triage agenda"
+sidebar_position: 7
+description: A copy-paste agenda for a time-boxed bug triage meeting, with a filled TaskFlow example.
+part: 98
+summary: Bug triage agenda with time-boxed sections, decision rules and a filled example.
+tags: [template, bug-triage, meeting]
+reading_time: 2
+related: ["/working-in-teams/bug-triage-meetings", "/templates/bug-report"]
+---
+
+<TLDR>
+A bug triage meeting decides, for each new defect, whether it is fixed now, later or never. Use a fixed agenda with time limits, so the meeting ends on time.
+</TLDR>
+
+## When to use it
+
+Use it for a regular triage meeting, usually 30 minutes, with the test lead, a developer lead and the product owner. Paste the agenda into your calendar invite and fill the defect list before the meeting.
+
+## Template
+
+```markdown
+# Bug triage: <date>, <team or release>
+Attendees: <names>
+Time box: 30 minutes. Anything not decided goes to the next meeting.
+
+## 1. New defects (10 min)
+- Walk the list of new defects, oldest first.
+- For each: confirm it can be reproduced. Ask for a bug report if missing.
+
+## 2. Severity and priority (10 min)
+- Agree severity (impact on users) and priority (order of work).
+- Rule: a blocker is decided here, not later.
+
+## 3. Decisions (5 min)
+| ID | Decision (fix now / next sprint / defer / reject) | Owner | Due |
+|---|---|---|---|
+
+## 4. Risks and open questions (3 min)
+- Items that need research before a decision.
+
+## 5. Close (2 min)
+- Read back the decisions. Confirm the owner for each.
+```
+
+## Filled example
+
+```markdown
+# Bug triage: 2026-11-06, TaskFlow 2026.10.4
+Attendees: Priya (test lead), Sam (dev lead), Ana (product owner)
+Time box: 30 minutes.
+
+## 1. New defects (10 min)
+- BUG-212: a 101-character title is saved. Reproduced by Priya. Report attached.
+- BUG-213: TODO to DONE is accepted with 200. The rule says 409. Reproduced. Report attached.
+
+## 2. Severity and priority (10 min)
+- BUG-212: medium. Breaks the title rule, no data loss.
+- BUG-213: high. Breaks the status flow rule, so task history can be wrong.
+
+## 3. Decisions (5 min)
+| ID | Decision | Owner | Due |
+|---|---|---|---|
+| BUG-212 | Fix now | Sam | Today |
+| BUG-213 | Fix now, blocks release | Sam | Tomorrow |
+
+## 4. Risks and open questions (3 min)
+- Does the status fix also change the reopen path? Sam to check.
+
+## 5. Close (2 min)
+- Read back: Sam owns both fixes. Priya retests both on the next build.
+```
+
+## Tips
+
+- Decide the blocker rule before the meeting, so nobody argues it live.
+- If a bug needs more than one minute of discussion, park it and assign an owner to research it.
+- Record the decision, not the discussion.

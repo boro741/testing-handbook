@@ -1,0 +1,49 @@
+---
+title: How to test a new feature
+sidebar_position: 44
+description: A numbered checklist for testing a new feature from requirements to release, with links to the chapter for each step.
+part: 8
+summary: Step-by-step checklist for testing a new feature, linked to the concept chapters.
+tags: [playbook, checklist, feature, process]
+reading_time: 6
+related: ["/planning-strategy/requirements-and-testability", "/test-design/equivalence-partitioning-and-boundaries", "/testing-by-layer/api-testing"]
+---
+
+<TLDR>
+Use this checklist when a new feature is coming. Each step names the chapter that explains it. Work through the steps in order, but skip any step that does not apply. Stop when the exit criteria are met.
+</TLDR>
+
+## Checklist
+
+1. **Read the acceptance criteria.** Are the rules, states and roles written down? If not, raise it before coding. See [requirements and testability](/planning-strategy/requirements-and-testability).
+2. **Rate the risks.** Which parts would hurt most if they broke? Set the test depth from that. See [risk-based testing](/planning-strategy/risk-based-testing).
+3. **Pick the test ideas.**
+   - Boundaries for each input. See [equivalence partitioning and boundaries](/test-design/equivalence-partitioning-and-boundaries).
+   - Rule combinations. See [decision tables](/test-design/decision-tables).
+   - Allowed and forbidden state moves. See [state transition testing](/test-design/state-transition-testing).
+   - Bad input and missing data. See [negative and edge cases](/test-design/negative-and-edge-cases).
+4. **Check permissions.** Test with the owner, a member, a non-member and no login.
+5. **Choose the layer for each idea.** Put most checks at the unit or API level. Use the UI for the main journeys only. See [the test automation pyramid](/automation-engineering/test-automation-pyramid).
+6. **Write API tests first.** They are faster and more stable than UI tests. See [API testing](/testing-by-layer/api-testing).
+7. **Add UI and end-to-end tests** for the critical user journey only. See [end-to-end testing](/testing-by-layer/end-to-end-testing).
+8. **Check the UI basics.** Keyboard use, labels and errors. See [accessibility testing](/other-non-functional/accessibility-testing).
+9. **Check compatibility** for the browsers and devices your users use. See [compatibility testing](/other-non-functional/compatibility-testing).
+10. **Run an exploratory session.** Spend a fixed time trying to break the feature in ways you did not script. See [exploratory testing](/test-design/exploratory-testing).
+11. **Check logs and metrics.** Can you tell from the logs what happened to a failed request? See [observability for testers](/modern-quality-engineering/observability-for-testers).
+12. **Add the tests to CI.** Fast checks run on every change. See [CI/CD and continuous testing](/automation-engineering/ci-cd-and-continuous-testing).
+13. **Check the exit criteria.** Are all planned tests run, and open defects within the agreed limit? See [entry and exit criteria](/planning-strategy/entry-and-exit-criteria).
+
+## Example
+
+Suppose the team adds "reassign a task to another project member". The API already has `POST /api/tasks/{id}/assign` (see [the TaskFlow reference](/start-here/taskflow-reference)).
+
+- Step 3: test a non-member assignee (422), a member assignee (200), and an unknown task ID (404).
+- Step 4: test the assign call as a non-member of the project (403).
+- Step 6: add these to the API test file, next to the existing assignment tests.
+- Step 7: one UI test that reassigns a task and sees the new name.
+
+## Done when
+
+- Every acceptance criterion has at least one passing test.
+- Every open defect is listed, with its severity and a decision on whether it blocks release.
+- The team agrees the exploratory notes are recorded.

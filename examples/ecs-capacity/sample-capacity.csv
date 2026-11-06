@@ -1,0 +1,4 @@
+service,peak_rps,per_task_rps,headroom
+task-service,1200,150,
+project-service,300,120,
+notification-service,80,40,1.5

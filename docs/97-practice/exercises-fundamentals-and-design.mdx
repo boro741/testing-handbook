@@ -1,0 +1,197 @@
+---
+title: "Exercises: fundamentals and design"
+sidebar_position: 97.2
+description: Eight practice exercises on testing ideas and test design, all using the TaskFlow rules. Try each one before you open the answer.
+part: 97
+summary: Practise verification, test levels, boundaries, decision tables, state transitions, pairwise testing, test cases and charters on TaskFlow.
+tags: [practice, exercises, test-design, boundaries, decision-table, state-transition, pairwise]
+reading_time: 6
+related: ["/practice/learning-paths", "/practice/exercises-automation-and-layers", "/start-here/taskflow-reference"]
+---
+
+<TLDR>
+Eight test-design exercises. Try each one before you open its answer.
+</TLDR>
+
+## Exercise 1: Verification, validation and test levels
+
+**Task:** A reviewer checks the status table in the [TaskFlow reference](/start-here/taskflow-reference) against the
+`TRANSITIONS` code. A tester asks whether a created task helps the team plan its day. Name each activity. Then pick the
+test level for "a title can be at most 100 characters".
+
+**Hint:** Verification asks "did we build it right?" Validation asks "did we build the right thing?"
+
+<details>
+<summary>Show the answer</summary>
+
+The table check is **verification** (against a spec). Asking whether the task helps the team is **validation** (against a user need).
+
+For the title rule, an **API test** fits best. It checks the 422 over HTTP, where the rule runs. A unit test is cheaper
+but does not prove the endpoint. A browser test repeats the rule more slowly.
+
+</details>
+
+## Exercise 2: Testing principles
+
+**Task:** A teammate says, "All 19 API tests pass, so TaskFlow has no defects." Which testing principle does this break?
+Name one more principle.
+
+**Hint:** Think about what a passing test proves, and how many titles a user could type.
+
+<details>
+<summary>Show the answer</summary>
+
+The claim breaks **testing shows the presence of defects, not their absence**. A passing test shows only that the
+checked behaviour worked for the inputs used.
+
+Another principle is **exhaustive testing is impossible**. A title can be any text from 1 to 100 characters. Use risk to choose where to look.
+
+</details>
+
+## Exercise 3: Boundary values for the title rule
+
+**Task:** The title rule says 1 to 100 characters. List the lengths you would test, with the status code you expect for each.
+
+**Hint:** Test each side of both edges, plus one normal value.
+
+<details>
+<summary>Show the answer</summary>
+
+| Length | Expected | Why |
+|---|---|---|
+| 0 | 422 | Below the minimum |
+| 1 | 201 | Minimum, accepted |
+| 50 | 201 | Normal value |
+| 100 | 201 | Maximum, accepted |
+| 101 | 422 | Above the maximum |
+
+The rule leaves one question open: TaskFlow does not trim spaces,
+and on the local app a one-space title returned 201. Ask the product owner whether that is intended.
+
+</details>
+
+## Exercise 4: Decision tables for task creation and assignment
+
+**Task:** Build two decision tables. Table A is for creating a task, with the conditions "project exists" and "caller is a
+project member". Table B is for assigning a task, with "task exists", "caller is a member" and "assignee is a member".
+Write the expected result for each row.
+
+**Hint:** Read `create_task` and `assign_task` in the app code. The first failing check decides the result.
+
+<details>
+<summary>Show the answer</summary>
+
+**Table A: create a task**
+
+| Project exists | Caller is a member | Expected |
+|---|---|---|
+| No | Any | 404, "Project not found" |
+| Yes | No | 403 |
+| Yes | Yes | 201 |
+
+**Table B: assign a task**
+
+| Task exists | Caller is a member | Assignee is a member | Expected |
+|---|---|---|---|
+| No | Any | Any | 404, "Task not found" |
+| Yes | No | Any | 403 |
+| Yes | Yes | No | 422 |
+| Yes | Yes | Yes | 200 |
+
+For assignment, "project exists" is implied by "task exists". An unknown user id fails the membership check, so it is 422.
+
+</details>
+
+## Exercise 5: State transitions for the status flow
+
+**Task:** A task is `IN_REVIEW`. For each target status (`TODO`, `IN_PROGRESS`, `DONE`, `REOPENED`, `IN_REVIEW`), give the
+HTTP status you expect from `PUT /api/tasks/{id}`. Name one move that is easy to forget.
+
+**Hint:** The allowed moves are in the `TRANSITIONS` dictionary. A status that does not change is handled separately.
+
+<details>
+<summary>Show the answer</summary>
+
+| Target | Expected | Reason |
+|---|---|---|
+| `TODO` | 409 | Not allowed from `IN_REVIEW` |
+| `IN_PROGRESS` | 200 | Allowed step-back |
+| `DONE` | 200 | Next step |
+| `REOPENED` | 409 | Only `DONE` leads to `REOPENED` |
+| `IN_REVIEW` | 200 | Same status: the code skips the check |
+
+Easy to forget: `DONE` to `IN_PROGRESS` returns 409. A reopened task must go through `REOPENED`.
+
+</details>
+
+## Exercise 6: Pairwise testing for browser, role and operating system
+
+**Task:** Use three browsers (Chrome, Firefox, Safari), two roles (project member, non-member) and two operating systems
+(Windows, macOS). The full set has 12 rows. Build a pairwise set with as few rows as possible. TaskFlow has no role field,
+so "role" means project membership here.
+
+**Hint:** Each row covers one browser-and-role pair. There are six such pairs, so you need at least six rows.
+
+<details>
+<summary>Show the answer</summary>
+
+| Row | Browser | Role | OS |
+|---|---|---|---|
+| 1 | Chrome | Member | Windows |
+| 2 | Chrome | Non-member | macOS |
+| 3 | Firefox | Member | macOS |
+| 4 | Firefox | Non-member | Windows |
+| 5 | Safari | Member | Windows |
+| 6 | Safari | Non-member | macOS |
+
+Every pair of values appears at least once, so six rows replace twelve. Pairwise testing still misses three-way bugs.
+
+</details>
+
+## Exercise 7: Writing a good test case
+
+**Task:** Write one test case: an assignee who is not a project member is rejected. Include ID, preconditions, steps
+and expected result.
+
+**Hint:** Name the users, the project and the task. Give one expected result per check. Avoid words such as "works".
+
+<details>
+<summary>Show the answer</summary>
+
+**ID:** TC-ASSIGN-002. **Title:** Assigning a non-member returns 422.
+
+**Preconditions:** Demo users exist. Alice is logged in.
+
+**Steps:**
+
+1. Alice creates project "Solo" with `POST /api/projects`.
+2. Alice creates a task in Solo with `POST /api/tasks`.
+3. Alice sends `POST /api/tasks/{id}/assign` with `{"user_id": 2}` (Bob).
+
+**Expected result:** Step 3 returns 422. A `GET /api/tasks/{id}` by Alice shows `assignee_id: null`.
+
+Alice is a member of Solo on purpose. A non-member caller would get 403 before the assignee check.
+
+</details>
+
+## Exercise 8: An exploratory testing charter
+
+**Task:** Write a charter for a 60-minute session on the status flow. List two things to check beyond the written rules.
+
+**Hint:** Use the format "Explore X with Y to discover Z."
+
+<details>
+<summary>Show the answer</summary>
+
+**Charter:** Explore status changes on one task, with Alice and Bob as project members, to discover moves that are accepted
+or rejected in a way a user would not expect. Time box: 60 minutes.
+
+Two things to look at:
+
+1. **A mixed update.** The `PUT` handler sets the title before the status check. Send a title change with an invalid
+   status and check whether the title was saved.
+2. **Restarts.** Tokens are held in memory. Check how the UI behaves with an old token after a restart.
+
+Record each finding with steps and results.
+
+</details>

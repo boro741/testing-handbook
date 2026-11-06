@@ -1,0 +1,49 @@
+---
+title: How to run a load test end to end
+sidebar_position: 48.1
+description: A numbered checklist for running a load test from SLOs to the final report, using the TaskFlow Locust and k6 scripts.
+part: 8
+summary: Step-by-step checklist for a complete load test, from targets to the written report.
+tags: [playbook, checklist, performance, load-testing]
+reading_time: 5
+related: ["/performance-fundamentals/performance-requirements-and-slos", "/load-testing-tools/locust-with-pytest", "/load-testing-tools/k6", "/ecs-performance/performance-report"]
+---
+
+<TLDR>
+Decide what "good" means before you generate any load. Start with a tiny smoke run, then ramp up in steps, and compare every result with the targets you wrote down. End with a report that someone else can repeat.
+</TLDR>
+
+## Checklist
+
+1. **Write the targets.** Set a p95 response time and an error rate per endpoint. See [performance requirements and SLOs](/performance-fundamentals/performance-requirements-and-slos).
+2. **Model the workload.** Decide the mix of actions, the think time and the peak users. See [workload modelling](/performance-fundamentals/workload-modelling).
+3. **Pick a tool.** Use [choosing a load testing tool](/load-testing-tools/choosing-a-tool). TaskFlow ships a Locust script and a k6 script.
+4. **Fill in the plan.** Use the [performance test plan template](/templates/performance-test-plan).
+5. **Check the environment.** Use a test target you own, with monitoring on. Never load test a system you have no approval for.
+6. **Smoke run.** One or two users for under a minute. Confirm the script logs in, the checks pass and the error rate is zero.
+7. **Ramp.** Raise users in steps. Hold each step long enough to settle. Stop when an SLO breaks or errors climb.
+8. **Read the results.** Look at percentiles, not averages. Check errors by endpoint. See [performance metrics](/performance-fundamentals/performance-metrics) and [finding bottlenecks](/performance-fundamentals/finding-bottlenecks).
+9. **Rule out the load generator.** If its own CPU is high, the numbers describe the generator, not the target.
+10. **Write the report.** Follow [the performance report](/ecs-performance/performance-report). State the verdict against the targets.
+11. **Repeat after changes.** Keep the script and settings so the run is repeatable. See [performance strategy and CI](/performance-fundamentals/performance-strategy-and-ci).
+
+## Example: TaskFlow smoke run
+
+Start the API, then run the Locust smoke command from the header of `examples/taskflow/loadtest/locustfile.py`. The k6 equivalent is `k6 run loadtest/k6-smoke.js`. See [Hands-on: Locust with pytest](/load-testing-tools/locust-with-pytest) and [Hands-on: k6](/load-testing-tools/k6).
+
+```bash
+cd examples/taskflow
+locust -f loadtest/locustfile.py --host http://localhost:8000 \
+  --headless -u 10 -r 2 -t 1m --csv results/smoke
+```
+
+:::info[Illustrative data]
+Suppose the target is p95 under 500 ms and under 1% errors. A step with 10 users shows p95 of 180 ms and 0% errors: pass. A step with 50 users shows p95 of 900 ms: fail. The knee is between the two, so the next run uses 20, 30 and 40 users. These numbers are invented.
+:::
+
+## Done when
+
+- Every endpoint has a target and a pass or fail result.
+- The smoke run passed before the ramp started.
+- The report names the highest load that met the targets.
+- Another person can rerun the test from the saved script and settings.

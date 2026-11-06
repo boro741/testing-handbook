@@ -1,0 +1,96 @@
+---
+title: Per-task capacity and task count
+sidebar_position: 67
+description: How to measure what one ECS task can handle at your SLO, then work out how many tasks you need for peak traffic, with a worked example.
+part: 12
+summary: Measure one task with autoscaling off, find its maximum RPS within the SLO, then divide the peak by it and add headroom.
+tags: [aws, ecs, capacity, sizing, load-testing]
+reading_time: 7
+related: ["/ecs-performance/auto-scaling", "/ecs-performance/right-sizing-and-cost", "/ecs-performance/performance-report", "/performance-fundamentals/performance-requirements-and-slos"]
+---
+
+<TLDR>
+To size an ECS service, first measure one task with autoscaling turned off. Find the highest requests per second (RPS) that still meets the SLO. Then divide the expected peak by that number and add headroom. Adding tasks only helps when the tasks are the bottleneck, so check that first.
+</TLDR>
+
+## What and why
+
+"How many tasks do we need?" is a common question, and a bad guess costs money or causes an outage. The method here answers it with one measurement and one formula.
+
+- **Per-task RPS:** the most requests per second one task can serve while still meeting its SLO. An SLO is a target, such as "p95 under 300 ms and errors under 1%". See [performance requirements and SLOs](/performance-fundamentals/performance-requirements-and-slos).
+- **Peak RPS:** the highest request rate you expect, taken from your access logs or a traffic model.
+- **Headroom:** a spare margin, so a small traffic spike does not break the SLO.
+
+## How it works
+
+**Step 1. Measure one task.** Run one task, with autoscaling off, and ramp the request rate up. Stop when the SLO breaks. The last rate that still passed is your per-task RPS. Measure it on the real task size you plan to run.
+
+**Step 2. Find the peak.** Use the highest rate you expect. Do not guess it. Use last month's busiest hour from the access logs, and add any known growth.
+
+**Step 3. Calculate the count:**
+
+```
+tasks = ceil(peak_rps / per_task_rps * headroom)
+```
+
+Headroom of 1.3 (30% spare) is a Recommendation, not a standard. Pick the margin with your team, based on how spiky your traffic is.
+
+The helper in `examples/ecs-capacity/capacity.py` does the same calculation. It rejects a per-task RPS of zero, because that would divide by zero:
+
+```python
+from capacity import tasks_needed
+
+print(tasks_needed(peak_rps=1200, per_task_rps=150, headroom=1.3))  # 11
+```
+
+### Worked example
+
+:::info[Illustrative data]
+The numbers below are invented for the handbook. They are not measurements.
+:::
+
+- Peak: 1,200 RPS for `task-service`.
+- One task at the SLO: 150 RPS (measured with autoscaling off).
+- Headroom: 1.3.
+
+1,200 / 150 = 8 tasks at full load. 8 x 1.3 = 10.4, rounded up to **11 tasks**.
+
+## The warning: tasks fix some problems, not all
+
+Adding tasks adds CPU and memory. That helps when each task runs out of CPU. It does **not** help when every task waits on the same shared resource.
+
+- If CPU is the limit, more tasks raise capacity almost in a straight line.
+- If the database connection limit is the limit, more tasks add more connections. Eleven tasks with 20 connections each can ask for 220 connections on a database that allows 100. Latency gets worse, not better.
+
+Your single-task test does not show this. One task never reaches the database limit on its own. So the per-task figure can look too good. Always check the database during a scale-out test. [The performance report](/ecs-performance/performance-report) walks through an illustrative case of this mistake.
+
+## When to use it (and when not to)
+
+| Use it when | Skip it when |
+|---|---|
+| The service is stateless and CPU or memory is the limit | Most time is spent waiting on the database, a cache or an external API |
+| You need a starting task count for a new service or size | You already have a tested count and only need to check it |
+
+## TaskFlow example
+
+`task-service` runs on 1 vCPU and 2 GB tasks. Use the CSV helper for several services at once:
+
+```bash
+cd examples/ecs-capacity
+.venv/bin/python capacity.py sample-capacity.csv
+```
+
+The sample file uses the same illustrative numbers as the worked example, plus two more services. The output has one row per service with `tasks_needed`.
+
+## Do this
+
+- Measure one task at the real task size, not a larger one.
+- Use the SLO from your requirements as the stopping rule. Do not stop at the first error.
+- Confirm the bottleneck is inside the task before you add tasks.
+- Re-measure after a code change, because per-task RPS changes with the code.
+
+## Avoid this
+
+- Using the average request rate as the peak.
+- Adding tasks to fix slow database queries.
+- Reading one task's result as the capacity of the whole service.

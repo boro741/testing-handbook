@@ -1,0 +1,98 @@
+---
+title: Game testing
+sidebar_position: 16.5
+description: "How to test games: playtesting, frame time, input devices, save files, balance checks, hardware compatibility, and why automation covers only part of the work."
+part: 16
+summary: "Games are judged by how they feel as well as whether they work, so testing mixes automated checks for speed, saves and balance with human playtesting."
+tags: [games, playtesting, performance, save-files, compatibility]
+reading_time: 6
+related: ["/testing-by-layer/ui-testing", "/other-non-functional/compatibility-testing", "/performance-fundamentals/performance-testing-types"]
+---
+
+<TLDR>
+A game has to be fun, fast and fair on every machine it runs on. Testing combines playtesting by people, automated checks of frame time, saves and balance, and compatibility runs across hardware. Automation covers the measurable parts. The feel of a game still needs people.
+</TLDR>
+
+Concepts only. Nothing on this page was run here.
+
+## What and why
+
+A game is software where the user's experience is the main product. A bug that a web app would call minor, such as a button that feels slow, can ruin a game. Game testing therefore asks questions that most business software never asks:
+
+- Is it fun, and does the player understand what to do next?
+- Does it stay smooth when many things happen at once?
+- Does a save survive a crash, an update and a change of machine?
+- Does the economy, such as coins or difficulty, stay balanced after a change?
+
+## How it works
+
+Most game teams run four kinds of testing in parallel.
+
+**Playtesting** puts people in front of the game. Testers play without scripts, say what confuses them, and are watched. Playtests find problems that no assertion would catch, such as a jump that feels unfair.
+
+**Performance checks** measure **frame time**: how long the game takes to draw one frame. At 60 frames per second, each frame has about 16.7 milliseconds. Frames that take longer show as stutter. Tests record frame times over a long run and look at the slowest frames, not only the average. [Performance testing types](/performance-fundamentals/performance-testing-types) describes the general approach.
+
+**Functional and save checks** replay known actions and check the result. Automated tests can drive menus, load a level, or save and reload.
+
+**Compatibility runs** repeat the important checks on the hardware and operating systems the game supports.
+
+## Input devices
+
+A player may use a keyboard, a controller or a touch screen. Test that each supported device reaches every menu and action, that button prompts match the device in use, and that input latency stays low.
+
+## Save files
+
+Saves are a major risk. Check that:
+
+- A save made at any point loads again, including after a crash during saving.
+- An old save loads in a new version. Migration rules must be tested with real old files.
+- A corrupt or edited save file is detected, and the game does not crash on load.
+- Cloud saves do not overwrite newer local progress without asking.
+
+## Balance checks
+
+Balance is about numbers: rewards, prices, enemy strength, drop rates. Balance checks often run as simulations. A script plays thousands of runs with simple strategies and reports how long a level takes or how much currency builds up. Simulations do not prove a game is fun, but they catch changes that make a level impossible or a reward worthless.
+
+## Compatibility across hardware
+
+The same build can run very differently on two graphics cards, or on two versions of the same operating system. Test the minimum and recommended hardware, several screen resolutions and aspect ratios, and any setting that changes rendering. Record the driver version with each result, because drivers often explain a failure.
+
+## Why automation is partial
+
+Automation is good at repeatable questions: does the save load, is the frame time under the limit, does the level finish. It is weak at fun, clarity and feel. A scripted player does not get confused. A glitch that shows only during one animation can slip past a screenshot check. Treat automation as a fast first filter, and keep people in the loop.
+
+## TaskFlow example
+
+:::info[Illustrative data]
+TaskFlow is not a game. This example imagines a team game in which each completed task earns points and unlocks a badge. The numbers below are invented and were not run.
+:::
+
+Imagine these checks for that game:
+
+- Play a simulated season of 500 scripted players. Check that the median player reaches the first badge within a planned range, and that no badge is unreachable.
+- Load a save from the previous version, then complete one task. Check that the points add up and the save writes back without loss.
+- Run the same scripted session on a low-end laptop and a high-end desktop. Compare the 99th-percentile frame time against the agreed limit.
+
+The rule that a task moves forward through its statuses comes from the [TaskFlow reference](/start-here/taskflow-reference), so the game should use the same rule.
+
+## Do this
+
+- Track the slowest frames, not only the average.
+- Test save migration with real saves from every supported older version.
+- Keep a list of supported hardware, and record the driver version in every result.
+- Run balance simulations after each change to numbers.
+- Recommendation: schedule playtests each week, even when automation is green.
+
+## Avoid this
+
+- Reporting "the game runs" from a single machine.
+- Using average frame time as the only performance number.
+- Testing only new save files.
+- Believing a passing balance simulation means the game is fun.
+
+## Further reading
+
+No external sources were checked for this page, so none are listed. Related pages in this handbook:
+
+- [Compatibility testing](/other-non-functional/compatibility-testing), for the general method of testing across hardware and platforms.
+- [Performance testing types](/performance-fundamentals/performance-testing-types), for load, stress and soak ideas that apply to game servers.

@@ -1,0 +1,141 @@
+---
+title: Find what you need
+sidebar_position: 1.5
+description: A lookup table. Say what you need to do, and it points to the page that helps.
+part: 0
+summary: Problem-based index that maps "I need to..." to the right page, playbook or template.
+tags: [start, index]
+reading_time: 3
+related: []
+---
+
+<TLDR>
+Start from the job you have, not from the topic name. Find your row, open the first link. Playbooks are step-by-step
+checklists, templates are copy-paste documents, and chapters explain the idea.
+</TLDR>
+
+## Planning and design
+
+| I need to... | Start here | Then |
+|---|---|---|
+| Decide what to test first when time is short | [Risk-based testing](/planning-strategy/risk-based-testing) | [Test coverage](/planning-strategy/test-coverage) |
+| Turn a requirement into test cases | [Writing test cases and traceability](/planning-strategy/writing-test-cases) | [Test case template](/templates/test-case), [Traceability matrix](/templates/traceability-matrix) |
+| Pick inputs for a rule with limits | [Equivalence partitioning and boundary values](/test-design/equivalence-partitioning-and-boundaries) | [Negative and edge-case testing](/test-design/negative-and-edge-cases) |
+| Test rules with several conditions | [Decision table testing](/test-design/decision-tables) | [Pairwise testing](/test-design/pairwise-testing) |
+| Test something that moves through states | [State transition testing](/test-design/state-transition-testing) | |
+| Write a test strategy or plan | [How to write a test strategy](/playbooks/how-to-write-a-test-strategy) | [Test plan template](/templates/test-plan) |
+| Decide when to start or stop testing | [Entry and exit criteria](/planning-strategy/entry-and-exit-criteria) | [Test summary report](/templates/test-summary-report) |
+| Report a bug so it gets fixed | [Bug report template](/templates/bug-report) | [Defect management](/planning-strategy/defect-management) |
+| Know which tests to run after a change | [Regression, retest, smoke and sanity](/fundamentals/regression-retest-smoke-sanity) | |
+
+## Testing a specific thing
+
+| I need to... | Start here | Then |
+|---|---|---|
+| Test a new feature | [How to test a new feature](/playbooks/how-to-test-a-new-feature) | [Exploratory testing](/test-design/exploratory-testing) |
+| Test a REST API | [How to test a REST API](/playbooks/how-to-test-a-rest-api) | [API testing](/testing-by-layer/api-testing), [API testing with the Postman CLI](/testing-by-layer/api-testing-with-postman-cli) |
+| Test GraphQL, gRPC or WebSocket | [Testing GraphQL, gRPC and WebSocket](/testing-by-layer/other-api-styles) | |
+| Test login and sessions | [How to test login and authentication](/playbooks/how-to-test-login-and-authentication) | [API security and injection](/other-non-functional/api-security-and-injection) |
+| Test a microservice or an event flow | [How to test a microservice](/playbooks/how-to-test-a-microservice) | [Microservices and event-driven testing](/testing-by-layer/microservices-and-event-driven-testing) |
+| Check two services agree on a message | [Integration and contract testing](/testing-by-layer/integration-and-contract-testing) | |
+| Test the UI | [UI testing](/testing-by-layer/ui-testing) | [End-to-end testing](/testing-by-layer/end-to-end-testing), [Visual regression testing](/automation-engineering/visual-regression-testing) |
+| Test a mobile app release | [How to test a mobile app release](/playbooks/how-to-test-a-mobile-app-release) | [Mobile app testing](/testing-by-layer/mobile-app-testing), [Device farms and real devices](/testing-by-layer/device-farms-and-real-devices) |
+| Check accessibility | [How to run an accessibility audit](/playbooks/how-to-run-an-accessibility-audit) | [Accessibility testing](/other-non-functional/accessibility-testing) |
+| Check security | [Security testing fundamentals](/other-non-functional/security-testing) | [API security and injection](/other-non-functional/api-security-and-injection) |
+| Check usability or other languages | [Usability and localization testing](/other-non-functional/usability-and-localization-testing) | |
+| Write unit tests, or work test-first | [Unit testing and TDD](/testing-by-layer/unit-testing-and-tdd) | |
+| Write acceptance tests with Given/When/Then | [Acceptance testing and BDD](/testing-by-layer/acceptance-testing-and-bdd) | |
+| Fake a service I do not control | [Test doubles and service virtualization](/automation-engineering/test-doubles-and-service-virtualization) | |
+| Check my tests are actually good | [Mutation and property-based testing](/automation-engineering/mutation-and-property-based-testing) | [Static analysis and code review](/modern-quality-engineering/static-analysis-and-code-review) |
+
+## Automation and CI
+
+| I need to... | Start here | Then |
+|---|---|---|
+| Choose a test tool | [Choosing UI and API test tools](/automation-engineering/choosing-test-tools) | |
+| Decide what to automate | [The test automation pyramid](/automation-engineering/test-automation-pyramid) | [Manual vs automated testing](/fundamentals/manual-vs-automated) |
+| Structure an automation framework | [Designing an automation framework](/automation-engineering/automation-framework-design) | [Design patterns for test code](/automation-engineering/design-patterns) |
+| Fix a flaky test | [How to triage a flaky test](/playbooks/how-to-triage-a-flaky-test) | [Flaky tests](/automation-engineering/flaky-tests) |
+| Set up a CI test pipeline | [How to set up a CI test pipeline](/playbooks/how-to-set-up-a-ci-test-pipeline) | [CI/CD and continuous testing](/automation-engineering/ci-cd-and-continuous-testing) |
+| Make the suite run faster | [Parallel and distributed execution](/automation-engineering/parallel-and-distributed-execution) | |
+| Manage test data | [Test data management](/automation-engineering/test-data-management) | |
+
+## Performance and capacity
+
+| I need to... | Start here | Then |
+|---|---|---|
+| Run a load test | [How to run a load test end to end](/playbooks/how-to-run-a-load-test-end-to-end) | [Performance test plan template](/templates/performance-test-plan) |
+| Pick a load tool | [Choosing a load testing tool](/load-testing-tools/choosing-a-tool) | [Locust with pytest](/load-testing-tools/locust-with-pytest), [k6](/load-testing-tools/k6) |
+| Build realistic traffic | [Workload modelling](/performance-fundamentals/workload-modelling) | |
+| Find out why it is slow | [Finding bottlenecks](/performance-fundamentals/finding-bottlenecks) | [Database performance](/performance-by-layer/database-performance) |
+| Work out how many ECS tasks I need | [How to size an ECS service](/playbooks/how-to-size-an-ecs-service) | [Per-task capacity and task count](/ecs-performance/per-task-capacity-and-task-count) |
+| Decide scale up or down, more memory or not | [Right-sizing and cost](/ecs-performance/right-sizing-and-cost) | [Auto scaling](/ecs-performance/auto-scaling) |
+| Set up a repeatable ECS test environment | [Setting up the ECS test environment with Terraform](/ecs-performance/infrastructure-as-code) | [CloudWatch alarms and dashboards](/ecs-performance/alarms-and-dashboards) |
+| Write the performance report for DevOps and developers | [The performance report](/ecs-performance/performance-report) | |
+| Check frontend or mobile speed | [Frontend performance](/performance-by-layer/frontend-performance) | [Mobile performance](/performance-by-layer/mobile-performance) |
+
+## Production and quality
+
+| I need to... | Start here | Then |
+|---|---|---|
+| Investigate a defect in production | [How to investigate a production defect](/playbooks/how-to-investigate-a-production-defect) | [Observability for testers](/modern-quality-engineering/observability-for-testers) |
+| Test safely in production | [Testing in production](/modern-quality-engineering/testing-in-production) | |
+| Measure quality | [Quality metrics and KPIs](/modern-quality-engineering/quality-metrics) | |
+
+## AI in testing
+
+| I need to... | Start here | Then |
+|---|---|---|
+| Judge an AI testing tool's claims | [The AI testing landscape](/ai-in-testing/ai-testing-landscape) | [Tool directory](/appendices/tool-directory) |
+| Generate tests with AI | [AI-assisted test generation](/ai-in-testing/ai-test-generation) | [Limits and risks of AI in testing](/ai-in-testing/limits-and-risks-of-ai) |
+| Explore an app with a browser agent | [Agentic and exploratory testing with browser agents](/ai-in-testing/browser-agents) | |
+| Test an app that uses an LLM | [Testing LLM and RAG applications](/ai-in-testing/testing-llm-and-rag-apps) | [Testing AI agents and AI security](/ai-in-testing/testing-ai-agents-and-security) |
+
+## Practice and career skills
+
+| I need to... | Start here | Then |
+|---|---|---|
+| Choose a learning path | [Learning paths](/practice/learning-paths) | [Self-check quizzes](/practice/self-check-quizzes) |
+| Practise on exercises | [Exercises: fundamentals and design](/practice/exercises-fundamentals-and-design) | [Exercises: automation and layers](/practice/exercises-automation-and-layers) |
+| Practise performance and modern topics | [Exercises: non-functional and performance](/practice/exercises-nonfunctional-and-performance) | [Exercises: modern practice and AI](/practice/exercises-modern-and-ai) |
+| Do the end-to-end project | [Capstone project: overview](/practice/project-overview) | [Project answer key](/practice/project-bug-answer-key) (spoilers) |
+
+## Working in teams
+
+| I need to... | Start here | Then |
+|---|---|---|
+| Fit testing into a sprint | [Testing in agile teams](/working-in-teams/testing-in-agile-teams) | [Sprint test checklist](/templates/sprint-test-checklist) |
+| Estimate testing work | [Test estimation in practice](/working-in-teams/test-estimation-in-practice) | [Estimation worksheet](/templates/estimation-worksheet) |
+| Run or join a bug triage | [Bug triage meetings](/working-in-teams/bug-triage-meetings) | [Bug triage agenda](/templates/bug-triage-agenda) |
+| Choose a test management tool | [Test management tools](/working-in-teams/test-management-tools) | |
+| Tell a manager whether we are ready to release | [Communicating quality and risk](/working-in-teams/communicating-quality-and-risk) | [Test summary report](/templates/test-summary-report) |
+
+## Other kinds of software
+
+| I need to... | Start here | Then |
+|---|---|---|
+| Test a data pipeline or ETL job | [Data and ETL testing](/other-domains/data-and-etl-testing) | |
+| Test a machine learning model | [Testing machine learning models](/other-domains/testing-machine-learning-models) | |
+| Test a desktop app | [Desktop app testing](/other-domains/desktop-app-testing) | |
+| Test embedded or IoT devices | [Embedded and IoT testing](/other-domains/embedded-and-iot-testing) | |
+| Test a game | [Game testing](/other-domains/game-testing) | |
+| Test SAP, Salesforce or similar platforms | [Enterprise platform testing](/other-domains/enterprise-platform-testing) | |
+
+## Security and resilience depth
+
+| I need to... | Start here | Then |
+|---|---|---|
+| Find threats before writing tests | [Threat modelling for testers](/other-non-functional/threat-modelling-for-testers) | [API security and injection](/other-non-functional/api-security-and-injection) |
+| Check dependencies and secrets | [Dependency and secrets scanning](/other-non-functional/dependency-and-secrets-scanning) | |
+| Break a dependency on purpose | [Fault injection, hands on](/other-non-functional/fault-injection-hands-on) | [Reliability and chaos](/other-non-functional/reliability-and-chaos) |
+| Test a Kubernetes deployment | [Testing on Kubernetes](/modern-quality-engineering/testing-on-kubernetes) | |
+| Test serverless functions | [Serverless testing](/testing-by-layer/serverless-testing) | |
+
+## Looking something up
+
+| I need... | Go to |
+|---|---|
+| A word explained | [Glossary](/start-here/glossary) |
+| Quick tables (percentiles, status codes, metric names) | [Cheat sheets](/appendices/cheat-sheets) |
+| The example app's rules and API | [TaskFlow reference](/start-here/taskflow-reference) |
+| Where a fact came from | [Sources](/appendices/sources) |

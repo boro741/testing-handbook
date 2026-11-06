@@ -1,0 +1,39 @@
+---
+title: How to test a microservice
+sidebar_position: 46
+description: A numbered checklist for testing one microservice on its own, and checking how it behaves with its dependencies stubbed, slow or down.
+part: 8
+summary: Step-by-step checklist for testing a single microservice, its contracts and its failure modes.
+tags: [playbook, checklist, microservices, contracts]
+reading_time: 6
+related: ["/testing-by-layer/microservices-and-event-driven-testing", "/testing-by-layer/integration-and-contract-testing", "/other-non-functional/reliability-and-chaos"]
+---
+
+<TLDR>
+Use this checklist to test one service well before you test the whole system. Test the service's own rules, its API and its events. Then test how it behaves when a dependency is stubbed, slow or down. Keep the full end-to-end run for a smaller number of checks.
+</TLDR>
+
+## Checklist
+
+1. **List the service's surface.** Write down its endpoints, the events it publishes and consumes, and the services it calls. For TaskFlow, `task-service` calls the database and publishes `task.assigned` and `task.status_changed` events in the production design. See [the TaskFlow reference](/start-here/taskflow-reference).
+2. **Test the service's own rules.** Unit tests for logic, then API tests against a real database. See [backend and database testing](/testing-by-layer/backend-and-database-testing).
+3. **Use a real database where it matters.** Run the service against Postgres when production uses Postgres. The local TaskFlow can do this with `docker compose up`.
+4. **Replace each dependency with a stub.** Keep stubs as simple as the real contract allows. A stub that always returns 200 hides failures.
+5. **Write contract tests for each call.** Check that the stub matches what the other service actually returns. See [integration and contract testing](/testing-by-layer/integration-and-contract-testing).
+6. **Test events.** Publish a test event, check the result, and publish it again. The second run must not create a duplicate. This is an idempotency check. See [microservices and event-driven testing](/testing-by-layer/microservices-and-event-driven-testing).
+7. **Test failure modes.** Make a dependency slow, return 500, or time out. Check that the service returns a clear error and does not hang. See [reliability and chaos](/other-non-functional/reliability-and-chaos).
+8. **Check health and logs.** Confirm `GET /health` (for TaskFlow, it returns `{"status": "ok"}`). Confirm that errors are logged with enough context to trace. See [observability for testers](/modern-quality-engineering/observability-for-testers).
+9. **Isolate data.** Each test creates its own data, so tests can run in parallel. See [test data management](/automation-engineering/test-data-management).
+10. **Run a short performance check** on the hottest endpoint, to catch a large slowdown. See [performance testing types](/performance-fundamentals/performance-testing-types).
+11. **Run one end-to-end check** across the real services in a shared environment. Keep it to the critical journey.
+
+## Example: one service, stubbed neighbours
+
+In the local TaskFlow there is one process, not separate services. You can still practise the pattern: point the API tests at the real database, and treat any notification as a stub that records the event. Then check that a status change publishes exactly one `task.status_changed` event, even if the publish is retried.
+
+## Done when
+
+- The service's API and rules pass against a real database.
+- Each dependency has a contract test.
+- Each event handler is idempotent, and the test shows it.
+- A failing dependency gives a clear error within the agreed timeout.

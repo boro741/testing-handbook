@@ -1,0 +1,66 @@
+---
+title: Performance testing types
+sidebar_position: 49
+description: Load, stress, spike, soak and scalability tests. What each one answers and when to run it.
+part: 9
+summary: The main kinds of performance test, and the question each one answers.
+tags: [performance, load-testing, stress-testing, soak-testing, spike-testing]
+reading_time: 5
+related: ["/performance-fundamentals/performance-metrics", "/performance-fundamentals/performance-requirements-and-slos", "/performance-fundamentals/workload-modelling"]
+---
+
+<TLDR>
+A performance test sends traffic to a system and measures how it behaves. Each type uses a different traffic shape to answer a different question. Pick the type from the question you need answered, not from the tool you like.
+</TLDR>
+
+## What and why
+
+Performance testing checks speed, stability and capacity under load. "Load" means how much traffic hits the system, usually counted as simultaneous users or requests per second.
+
+The main types differ in the shape of the load over time. The table shows the five types this handbook uses.
+
+| Type | Load shape | Question it answers |
+|---|---|---|
+| **Load** | Expected peak, held steady for a while | Does the system meet its targets at normal peak? |
+| **Stress** | Load rises past the expected peak until something breaks | Where is the breaking point, and how does the system fail? |
+| **Spike** | A sudden jump, then a drop | Does it survive a burst, and does it recover afterwards? |
+| **Soak** (endurance) | Normal load for hours | Does anything degrade over time, such as memory growth or leaked connections? |
+| **Scalability** | Capacity goes up in steps (more instances), with load | Does adding capacity give a matching gain in throughput? |
+
+## When to use it (and when not to)
+
+| Use it when | Skip it when |
+|---|---|
+| You have a target to check, such as a p95 response time | You have no targets yet. Define them first (see [performance requirements and SLOs](/performance-fundamentals/performance-requirements-and-slos)) |
+| A release changes a busy path, such as task creation | A change only touches text or styling |
+| You plan capacity before a launch | The test environment is far smaller or different from production. The numbers will mislead |
+
+## TaskFlow example
+
+The local TaskFlow API in `examples/taskflow/` is small, but the types still apply. The Locust script in `loadtest/locustfile.py` uses 10 users for one minute. That is a smoke run, which checks that the basics work. It is not a load test.
+
+```bash
+cd examples/taskflow
+locust -f loadtest/locustfile.py --host http://localhost:8000 \
+       --headless -u 10 -r 2 -t 1m
+```
+
+For TaskFlow, each type would look like this:
+
+- **Load:** hold a normal peak of task reads and writes for 30 minutes.
+- **Stress:** keep adding users until errors or timeouts appear.
+- **Spike:** jump from 10 to 200 users in seconds, then drop back.
+- **Soak:** run a normal mix for several hours. Watch memory. The local API keeps every login token in an in-memory dictionary (`TOKENS` in `app/main.py`) and never removes old tokens, so a long soak shows that growth clearly.
+
+## Do this
+
+- Choose the type from the question you need answered.
+- Start every new script with a smoke run, then move to the heavier types.
+- Keep the data, environment and script version the same between runs of one type.
+- Run soak tests long enough to show slow changes. A two-minute run cannot show a leak.
+
+## Avoid this
+
+- Calling a short run a soak test, or a single-level run a stress test.
+- Running stress or spike tests on a shared environment without telling the team first.
+- Testing only at one load level. A system can pass at 10 users and fail at 100.

@@ -1,0 +1,78 @@
+---
+title: Entry and exit criteria
+sidebar_position: 10
+description: How to write conditions that say when testing can start and when it can stop, with a TaskFlow release example.
+part: 2
+summary: Entry criteria say when testing can start. Exit criteria say when it can stop. Both must be measurable.
+tags: [planning, criteria, release]
+reading_time: 5
+related: [/docs/planning-strategy/test-strategy-vs-plan, /docs/planning-strategy/defect-management]
+---
+
+<TLDR>
+Entry criteria are conditions that must be true before testing starts. Exit criteria are conditions that must be true before testing stops. Write both as checks anyone can verify, so the team does not argue about whether testing is "done".
+</TLDR>
+
+## What and why
+
+Without clear criteria, testing either starts too early, on a broken build, or stops too early, before the risky parts are tested. Entry and exit criteria prevent both.
+
+- **Entry criteria:** what must be ready before testing begins. For example, the build is deployed and the test data is loaded.
+- **Exit criteria:** what must be true before testing ends. For example, the planned tests have run and no open critical defects remain.
+
+## How it works
+
+Write each criterion as something you can check with a yes or no answer.
+
+| Good (checkable) | Weak (opinion) |
+|---|---|
+| The smoke test passes on the test environment | The build looks stable |
+| All planned API tests have been run | Testing is mostly done |
+| No open defects of the highest severity | The important bugs are fixed |
+
+Recommendation: keep the list short, five to eight items for each. Agree the list with the product owner and developers.
+
+## When to use it (and when not to)
+
+| Use them when | Skip them when |
+|---|---|
+| A release has a fixed date | You are running a personal experiment |
+| Several teams depend on the release | The change is a small fix that you can test in minutes |
+| Stakeholders need to know when to say go | Your team already has an agreed release gate |
+
+## TaskFlow example
+
+:::info[Illustrative data]
+The thresholds below are examples to adapt. They are not standards.
+:::
+
+**Entry criteria for system testing of a release (illustrative):**
+
+- The build is deployed to the test environment.
+- The smoke test passes (login, create a task, read it back).
+- Test users `alice` and `bob` exist, with the Demo project.
+- Requirements for the release are reviewed.
+
+**Exit criteria (illustrative):**
+
+- All planned status-flow and assignment tests have been run.
+- No open critical defects. Open high defects are accepted by the product owner in writing.
+- The regression suite passes on the final build.
+
+A smoke test failure on day one fails the entry criteria, so testing waits. That saves the team a week of running tests on a broken build.
+
+## Do this
+
+- Make each criterion checkable by someone who was not in the meeting.
+- Agree what happens if a criterion is not met, such as who can accept the risk.
+- Review criteria at the start of each release.
+- Keep exit criteria tied to the risks in your plan.
+
+## Avoid this
+
+- Using "all tests pass" as the only exit criterion. A passing suite can still miss the risk.
+- Writing criteria nobody checks.
+
+## Further reading
+
+For how defects feed into the exit decision, see [Defect management and the bug life cycle](/planning-strategy/defect-management).

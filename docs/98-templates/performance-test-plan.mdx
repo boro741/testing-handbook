@@ -1,0 +1,88 @@
+---
+title: "Template: performance test plan"
+sidebar_position: 4
+description: A copy-paste performance test plan template with a filled TaskFlow example.
+part: 98
+summary: Performance test plan with goals, SLOs, workload, environment, data, load profile, stop criteria and risks.
+tags: [template, performance, load-testing]
+reading_time: 3
+related: []
+---
+
+<TLDR>
+A performance test plan turns "is it fast enough?" into numbers you agreed on before the test. It also says when to stop so you do not harm a shared system.
+</TLDR>
+
+## When to use it
+
+Use it before any load, stress or soak test. An **SLO** (service level objective) is a target such as "95 percent of requests finish in under 500 ms".
+
+## Template
+
+```markdown
+# Performance test plan: [system, date]
+
+## 1. Goals and SLOs
+Question to answer:
+| Metric | Target (SLO) |
+|---|---|
+
+## 2. Workload model
+Who the users are, what they do, mix of actions, think time.
+
+## 3. Environment
+Target system and its size. Load generator location. How it differs from production.
+
+## 4. Test data
+Volume, users, accounts, how it is reset.
+
+## 5. Load profile
+Ramp-up, steady state, ramp-down, duration, peak.
+
+## 6. Stop criteria
+Abort when:
+
+## 7. Monitoring
+Metrics and dashboards watched.
+
+## 8. Risks and approvals
+```
+
+## Filled example
+
+```markdown
+# Performance test plan: TaskFlow task API, test environment
+
+## 1. Goals and SLOs
+Can the task API handle the expected weekday peak?
+| Metric | Target (SLO) |
+|---|---|
+| GET /api/tasks/{id} p95 | under 300 ms |
+| POST /api/tasks p95 | under 500 ms |
+| Error rate | under 1 percent |
+
+## 2. Workload model
+80 percent reads, 15 percent create, 5 percent update. Think time 1 to 3 s.
+
+## 3. Environment
+Test stack with one task-service container. Load generator on a separate machine.
+
+## 4. Test data
+200 users, 50 projects, 10,000 tasks. Reset before each run.
+
+## 5. Load profile
+Ramp 0 to 100 users in 5 min, hold 20 min, ramp down 5 min.
+
+## 6. Stop criteria
+Stop if error rate is over 5 percent for 2 min, or the load generator CPU is over 85 percent.
+
+## 7. Monitoring
+Latency percentiles, CPU, memory, database connections.
+
+## 8. Risks and approvals
+Shared database. Run off-hours. Approved by the test environment owner.
+```
+
+:::info[Illustrative data]
+All targets, user counts and sizes are examples, not measured limits of TaskFlow.
+:::

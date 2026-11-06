@@ -1,0 +1,80 @@
+---
+title: Negative and edge-case testing
+sidebar_position: 18
+description: How to test invalid input, error paths and unusual values, with real results from the local TaskFlow API.
+part: 3
+summary: Negative tests check that bad input is refused. Edge cases check unusual but valid input. Both find bugs that happy-path tests miss.
+tags: [test-design, negative, edge-cases, techniques]
+reading_time: 6
+related: [/docs/test-design/equivalence-partitioning-and-boundaries, /docs/test-design/exploratory-testing, /docs/planning-strategy/defect-management]
+---
+
+<TLDR>
+Negative tests give the system input it should refuse, such as a missing token or an unknown ID. Edge cases give unusual but allowed input, such as spaces, emoji or the last valid value. Both sit outside the happy path, and that is where most defects are found.
+</TLDR>
+
+## What and why
+
+A **negative test** checks that the system says no to something it should refuse. A **negative case** is the input or action that should fail.
+
+An **edge case** is an unusual input at the limit of what is allowed, or a situation the normal flow does not cover. Boundary values from [Equivalence partitioning and boundary values](/test-design/equivalence-partitioning-and-boundaries) are one kind of edge case.
+
+Both matter because users, other systems and attackers do not always send the expected input.
+
+## How it works
+
+A simple way to find cases:
+
+| Ask | Example |
+|---|---|
+| What input is wrong? | Empty title, wrong priority case, unknown project |
+| What is missing? | No token, no body, no field |
+| What is at the limit? | 0, 1, 100, 101 characters |
+| What is unusual but allowed? | Spaces only, emoji, one character |
+| What happens twice? | Deleting the same task twice |
+
+## When to use it (and when not to)
+
+| Use it when | Skip it when |
+|---|---|
+| A feature takes input from users or other systems | The input is fixed by the code and cannot change |
+| Errors are expensive to find later | The feature is internal and never exposed |
+| You are checking security or access | You have already covered the case with a rule test |
+
+## TaskFlow example
+
+:::tip[What the local app returned]
+These are what the local TaskFlow API returned when checked by hand on 2026-11-06. They are not measurements on a real system. Repeat the checks yourself before you rely on them.
+:::
+
+| Case | Expected | Returned locally |
+|---|---|---|
+| Create a task with no token | 401 | 401 |
+| Create a task with a wrong token | 401 | 401 |
+| Create a task in a project you are not in | 403 | 403 |
+| Create a task in a project that does not exist | 404 | 404 |
+| Get a task that does not exist | 404 | 404 |
+| Delete the same task twice | 204, then 404 | 204, then 404 |
+| Title of 101 characters | 422 | 422 |
+| Title of 100 emoji | Depends on what "character" means | 201 |
+| Title of 5 spaces | Not stated in the rule | 201 |
+| Update a task title to an empty string | 422 | 422 |
+| Move a task from `TODO` straight to `DONE` | 409 | 409 |
+
+Two rows need a decision. A title of only spaces is accepted, and the rule does not say whether spaces count. A title of 100 emoji is accepted, because the app counts characters as Python sees them. Both are good questions for the product owner, and they are good candidates for a defect report, as in [Defect management](/planning-strategy/defect-management).
+
+## Do this
+
+- Write a negative test for each input that the rule refuses.
+- Test the same rule with unusual but valid values, such as spaces and non-English text.
+- Check the error response code and that the data did not change.
+- Repeat an action to see how the system handles duplicates.
+
+## Avoid this
+
+- Testing only that bad input fails. Also check the error message and that nothing was saved.
+- Deciding an edge case is "fine" without asking what the rule means.
+
+## Further reading
+
+For the rules behind these checks, see [Decision table testing](/test-design/decision-tables) and [State transition testing](/test-design/state-transition-testing).

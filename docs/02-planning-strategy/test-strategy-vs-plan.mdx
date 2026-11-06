@@ -1,0 +1,79 @@
+---
+title: Test strategy vs test plan
+sidebar_position: 7
+description: The difference between a test strategy (the long-term approach) and a test plan (the work for one release or project).
+part: 2
+summary: A strategy says how you test. A plan says what, who and when for one release.
+tags: [planning, strategy, test-plan]
+reading_time: 5
+related: [/docs/planning-strategy/risk-based-testing, /docs/planning-strategy/entry-and-exit-criteria, /docs/playbooks/how-to-write-a-test-strategy]
+---
+
+<TLDR>
+A test strategy is the approach that stays the same for a product or team over time. A test plan is the work for one release or project: scope, people, dates and criteria. Keep the strategy short and stable, and update the plan for each release.
+</TLDR>
+
+## What and why
+
+Teams often write one long document and call it "the test plan". Splitting it into two helps.
+
+- The **strategy** answers: how do we test our products? It covers test levels, tools, environments and risk rules.
+- The **plan** answers: what will we test for this release, who does it, and when are we done?
+
+The strategy changes rarely. The plan changes with every release.
+
+## How it works
+
+| | Test strategy | Test plan |
+|---|---|---|
+| Scope | A product or team | One release, sprint or project |
+| Life span | Long, reviewed now and then | Short, updated often |
+| Contents | Approach, levels, tools, environments, risk rules | Features in scope, schedule, people, entry and exit criteria, risks for this release |
+| Owner | Test lead or QA lead | Test lead or release owner |
+
+Recommendation: keep the strategy to a few pages, and link it from each plan rather than copying it.
+
+## When to use it (and when not to)
+
+| Write a strategy when | Write a plan when |
+|---|---|
+| A new product or team starts | A release or large feature is coming |
+| Many teams need one way of testing | A release has its own risks or dates |
+| Tools or environments change | The scope has changed since last time |
+
+Skip a formal document for a small change to a stable product. A short note in the ticket can be enough.
+
+## TaskFlow example
+
+**Strategy (excerpt, illustrative):**
+
+- Business rules are checked with API tests on every change.
+- The UI has a smoke test on every release.
+- Load tests run before major traffic events.
+
+**Plan for a release that adds the "reopen" flow (illustrative):**
+
+| Item | Detail |
+|---|---|
+| Scope | `DONE` to `REOPENED` to `IN_PROGRESS`, plus notifications |
+| Tests | Status-flow API tests, one UI smoke test, notification check |
+| Out of scope | Mobile app (tested in the next release) |
+| Exit | The [exit criteria](/planning-strategy/entry-and-exit-criteria) are met |
+
+The strategy says how to test. The plan says what this release needs.
+
+## Do this
+
+- Keep the strategy short enough to read in one sitting.
+- Put scope, dates and owners in the plan, not in the strategy.
+- Review the plan at the start and end of each release.
+- Link the plan to the strategy, so no one copies outdated rules.
+
+## Avoid this
+
+- Writing a 40-page plan that nobody reads.
+- Using the plan as the only place where your test approach is written down.
+
+## Further reading
+
+See [How to write a test strategy](/playbooks/how-to-write-a-test-strategy) for a step-by-step checklist.

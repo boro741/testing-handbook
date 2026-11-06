@@ -1,0 +1,77 @@
+---
+title: Exploratory testing
+sidebar_position: 17
+description: How to explore software with a clear goal, using charters and time-boxed sessions, with a TaskFlow example.
+part: 3
+summary: Explore with a purpose. Write a charter, run a time-boxed session, and record what you learned.
+tags: [test-design, exploratory, charters, sessions]
+reading_time: 6
+related: [/docs/test-design/use-case-and-scenario-testing, /docs/test-design/negative-and-edge-cases, /docs/ai-in-testing/browser-agents]
+---
+
+<TLDR>
+Exploratory testing means learning about the software while you test it, with no fixed script. You work with a goal called a charter, and you record what you find. It finds problems that scripted tests miss, because you follow what looks odd.
+</TLDR>
+
+## What and why
+
+Scripted tests check what someone expected. Exploratory testing finds what nobody expected. The tester designs and runs tests at the same time, and each result shapes the next step.
+
+It is not random clicking. A good session has a goal, a time limit and notes.
+
+**Session-based test management** (SBTM) is one way to run it. It was described by James and Jon Bach, and organises work into time-boxed sessions with a charter and a debrief.
+
+## How it works
+
+A **charter** is a short mission. A common form is:
+
+> Explore **[area]** with **[resources or method]** to discover **[information or risks]**.
+
+A session has three steps:
+
+1. Read the charter and set a time box. Recommendation: 60 to 90 minutes.
+2. Explore, and note what you tried, what you saw, and any bugs or questions.
+3. Debrief: share the findings and decide what to do next.
+
+## When to use it (and when not to)
+
+| Use it when | Skip it when |
+|---|---|
+| A feature is new or changing fast | You need proof that a fixed rule holds (write a test) |
+| The risk is about user confusion or odd flows | The path is fully known and stable |
+| You have a time limit and want the most learning | You have no time to debrief |
+
+## TaskFlow example
+
+:::info[Illustrative data]
+The session notes below are an example of the format. They are not a record of a real session.
+:::
+
+**Charter:** Explore task status changes with two users in one project, to discover problems with reopening tasks and with what each user sees.
+
+**Session notes (illustrative):**
+
+| Time | What I tried | What I saw | Action |
+|---|---|---|---|
+| 0:00 | Log in as `alice`, move a task to `DONE` | Status changes to `DONE` | Ask: is the reopen step visible to `bob`? |
+| 0:15 | Log in as `bob`, open the same task | Task shows `DONE` | Note: no problem found |
+| 0:30 | `alice` reopens the task, `bob` moves it to `IN_PROGRESS` | Move is allowed | Check against the status flow |
+| 0:50 | Open two browser tabs, move the same task in both | To be explored | Raise as a question for the developer |
+
+The debrief decides whether the open question is a defect or a rule to clarify.
+
+## Do this
+
+- Write a charter before each session, and keep it to one area.
+- Time-box the session, and take notes while you test, not afterwards.
+- Turn each surprising result into a test, once you understand it.
+- Debrief with a developer or product owner, so findings do not stay with one person.
+
+## Avoid this
+
+- Running sessions with no charter, and calling it exploration.
+- Recording only the bugs. Notes on what you tried are what make the session repeatable.
+
+## Further reading
+
+For an AI-assisted way to explore a running app, see [Agentic and exploratory testing with browser agents](/ai-in-testing/browser-agents). Exploration by people still comes first.

@@ -1,0 +1,126 @@
+---
+title: "Exercises: modern practice and AI"
+sidebar_position: 97.5
+description: "Six exercises on shift-left, traces, AI-written tests, feature flags, delivery metrics and flaky tests, all using TaskFlow. Try each one before you open the answer."
+part: 97
+summary: Where to shift left, reading a trace, judging AI-generated test code, deciding on a feature flag, calculating DORA measures and finding a flaky-test cause.
+tags: [practice, exercises, shift-left, observability, ai, feature-flags, dora, flaky-tests]
+reading_time: 6
+related: ["/practice/learning-paths", "/practice/exercises-nonfunctional-and-performance", "/modern-quality-engineering/shift-left-and-shift-right", "/ai-in-testing/ai-test-generation"]
+---
+
+<TLDR>
+Six exercises on modern quality practice and AI-assisted testing. Each one gives a short scenario, a hint and an answer you open after you try. Some numbers and excerpts are invented, and the exercises say so.
+</TLDR>
+
+## What and why
+
+These exercises ask you to pick the right activity, read the evidence, and check an AI-written claim before you trust it. Rules come from the [TaskFlow reference](/start-here/taskflow-reference).
+
+## Exercise 1: Decide what to shift left
+
+**Task:** The team keeps finding that the title rule (1 to 100 characters) is unclear. Testers only learn about the rule after coding. Which activity moves testing left? (a) A synthetic check in production. (b) Reviewing the title rule for testability before coding starts. (c) A canary release. (d) Recording real user sessions.
+
+**Hint:** Shift-left means finding problems earlier in the life cycle. See [shift-left and shift-right](/modern-quality-engineering/shift-left-and-shift-right).
+
+<details>
+<summary>Show the answer</summary>
+
+**(b).** A review of the requirement for testability finds the vague rule while it is still cheap to fix. Options (a), (c) and (d) are shift-right activities. They learn from production, after the code exists.
+
+</details>
+
+## Exercise 2: Read a trace
+
+**Task:** A trace for one `POST /api/tasks` request shows the spans below. Where did most of the time go?
+
+:::info[Illustrative data]
+These spans are invented for practice. They are not captured from TaskFlow.
+
+| Span | Duration (ms) |
+|---|---|
+| `POST /api/tasks` (whole request) | 480 |
+| Token check | 3 |
+| Project lookup | 4 |
+| Database pool wait for a connection | 410 |
+| Insert task row | 12 |
+:::
+
+**Hint:** Compare each child span with the whole request. See [observability for testers](/modern-quality-engineering/observability-for-testers).
+
+<details>
+<summary>Show the answer</summary>
+
+Most of the time, 410 of 480 ms, was spent **waiting for a database connection**. The insert itself took 12 ms. The slow step is the connection pool, not the SQL. A test that only checks the status code would miss this. The trace points the investigation at the pool, as covered in [backend API performance](/performance-by-layer/backend-api-performance).
+
+</details>
+
+## Exercise 3: Judge AI-generated test code
+
+**Task:** An AI tool wrote this test from the user story "a new task is created". Say what is wrong with it.
+
+```python
+import uuid
+
+def test_create_task(client, auth_headers):
+    title = f"task {uuid.uuid4()}"
+    r = client.post("/api/tasks", headers=auth_headers,
+                    json={"title": title, "priority": "LOW", "project_id": 1})
+    assert r.json()["id"] == 7
+```
+
+**Hint:** Ask what the test would do if the API returned a 422, and whether the id depends on data already in the database. See [AI-assisted test generation](/ai-in-testing/ai-test-generation).
+
+<details>
+<summary>Show the answer</summary>
+
+Three things are wrong. The test never checks the status code, so a 422 fails for the wrong reason. The id `7` depends on how many tasks already exist, so the result depends on run order. The test also never checks the title it sent. Assert `r.status_code == 201`, compare the returned title with the sent one, and do not hard-code an id.
+
+</details>
+
+## Exercise 4: Decide whether a flag is safe
+
+**Task:** A new rule, behind the flag `strict_review`, changes the status flow. The flag is off for everyone except the QA group. The team wants to turn it on for all users today. Which next step is safest? (a) Turn it on for everyone at once. (b) Turn it on for 5% of users, watch errors and latency, and confirm that switching it off works. (c) Delete the flag and ship the rule. (d) Wait until a new release.
+
+**Hint:** A flag is a switch that needs a tested rollback. See [testing in production](/modern-quality-engineering/testing-in-production).
+
+<details>
+<summary>Show the answer</summary>
+
+**(b).** A small rollout limits the harm, and the team can see the effect before it widens. The off switch must be tested before it is needed. Option (a) removes the safety net. Option (c) removes the rollback. Option (d) is not needed, since the flag already lets the team change behaviour without a release.
+
+</details>
+
+## Exercise 5: Calculate delivery measures
+
+**Task:** In one 30-day period, the team made 15 production deployments. Three of them needed a fix or rollback. Calculate the change failure rate and the deployment frequency per day.
+
+:::info[Illustrative data]
+These counts are invented for practice.
+:::
+
+**Hint:** The DORA measures on the quality metrics page are deployment frequency, lead time for changes, time to restore service and change failure rate. Use the two that the counts support.
+
+<details>
+<summary>Show the answer</summary>
+
+**Change failure rate:** 3 of 15 deployments, or **20%**.
+
+**Deployment frequency:** 15 deployments in 30 days, or **0.5 per day** (about 3.5 per week).
+
+Read these over several periods, and do not use them to rank people. See [quality metrics and KPIs](/modern-quality-engineering/quality-metrics).
+
+</details>
+
+## Exercise 6: Find the flaky-test cause
+
+**Task:** The test `test_assign_task` passes when run alone. In the full suite, it fails only when `test_delete_task` runs before it. Both tests use task `1` from the shared database. What is the most likely cause, and what is the fix?
+
+**Hint:** The flaky tests chapter lists causes such as timing, shared data and order dependence. See [flaky tests](/automation-engineering/flaky-tests).
+
+<details>
+<summary>Show the answer</summary>
+
+The cause is **shared data with order dependence**. The delete test removes the row the assign test needs. The fix is to give each test its own data. A retry would hide the problem.
+
+</details>

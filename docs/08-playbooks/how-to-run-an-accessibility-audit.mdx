@@ -1,0 +1,47 @@
+---
+title: How to run an accessibility audit
+sidebar_position: 48.5
+description: A numbered checklist for auditing a page or flow for accessibility, with an automated scan, keyboard and screen reader passes, and a retest.
+part: 8
+summary: Step-by-step checklist for an accessibility audit, from automated scan to retest.
+tags: [playbook, checklist, accessibility, a11y]
+reading_time: 5
+related: ["/other-non-functional/accessibility-testing", "/testing-by-layer/ui-testing", "/other-non-functional/usability-and-localization-testing"]
+---
+
+<TLDR>
+Automated scans find only some problems. So combine three passes: an automated scan, a keyboard-only pass and a screen reader pass. Record each finding with its location and the rule it breaks, fix, then retest. The basics are in [accessibility testing](/other-non-functional/accessibility-testing).
+</TLDR>
+
+## Checklist
+
+1. **Set the scope.** Choose the pages and the journeys, for example login, task list and create task. Choose the standard, such as WCAG 2.2 level AA.
+2. **Run an automated scan** on each page. Save the results.
+3. **Triage the scan.** Remove duplicates. Confirm each result by hand, because tools can report false positives.
+4. **Keyboard pass.** Use only Tab, Shift+Tab, Enter, Space and Esc. Check that every control is reachable, the focus is visible and the order is logical. Check there is no keyboard trap.
+5. **Screen reader pass.** Use one screen reader on your platform. Check page titles, headings, labels on fields and buttons, error messages and dynamic updates.
+6. **Visual checks.** Zoom to 200%, check colour contrast, and check that nothing relies on colour alone.
+7. **Record each finding.** Page, steps, expected result, actual result, the rule broken and the severity. Use the [bug report template](/templates/bug-report).
+8. **Prioritise.** Fix first what blocks a task, such as a button with no name.
+9. **Retest.** Repeat all three passes on the fixed pages.
+10. **Keep it from coming back.** Add the automated scan to the UI tests. See [UI testing](/testing-by-layer/ui-testing).
+
+## Example: the TaskFlow login form
+
+Tab through the form. The cursor should go to username, password, then the login button, with a visible outline. With a screen reader on, each field should be announced with its label. Submit a wrong password. The error should be announced without moving the mouse.
+
+| Finding | Pass | Severity |
+|---|---|---|
+| Error text not announced | Screen reader | High |
+| No visible focus on the button | Keyboard | High |
+
+:::info[Illustrative data]
+These two findings are invented to show the record format. They are not results from the TaskFlow UI.
+:::
+
+## Done when
+
+- All three passes are done on every page in scope.
+- Every finding has an owner and a severity.
+- Retest shows no open blocker.
+- The scan runs in CI for the pages in scope.

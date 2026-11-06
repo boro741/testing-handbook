@@ -1,0 +1,86 @@
+---
+title: Quality metrics and KPIs
+sidebar_position: 43
+description: Which quality metrics help a team improve, which ones mislead, and how to read a metrics table, with an illustrative TaskFlow example.
+part: 7
+summary: Useful and misleading quality metrics, DORA measures, and how to use them without gaming them.
+tags: [metrics, kpi, dora, quality]
+reading_time: 8
+related: ["/planning-strategy/test-coverage", "/automation-engineering/flaky-tests", "/automation-engineering/ci-cd-and-continuous-testing"]
+---
+
+<TLDR>
+Quality metrics show whether your testing and delivery are working. Good metrics point to a question you can act on. Bad metrics reward activity, such as counting tests, and can be gamed. Pick a few measures, check them over time, and use them to improve the process, not to rank people.
+</TLDR>
+
+## What and why
+
+A KPI (key performance indicator) is a metric tied to a goal. A metric alone is just a number. A KPI says what good looks like.
+
+The question to ask of every metric is: "If this number went up, would the product be better?" If the answer is "only if people worked harder", drop it.
+
+## How it works
+
+**DORA metrics** are delivery measures from the DORA research program. The current DORA guide lists five: deployment frequency, lead time for changes, change failure rate, failed deployment recovery time, and deployment rework rate. The 2018 research report named four (it called the last one time to restore service). Use them as signals for a team to discuss, not as targets to hit.
+
+Testing-specific measures that tend to help:
+
+- **Escaped defects.** Bugs found after release, per release. Count them by severity.
+- **Flaky test rate.** Share of test runs that fail for no code change. See [flaky tests](/automation-engineering/flaky-tests).
+- **Time to triage a failed build.** How long a failure waits before someone looks at it.
+- **Requirement coverage.** Share of acceptance criteria with at least one test. This is more useful than line coverage alone. See [test coverage](/planning-strategy/test-coverage).
+
+Vanity metrics to be careful with:
+
+| Metric | Why it misleads |
+|---|---|
+| Number of test cases | Easy to inflate with near-duplicate tests |
+| Line coverage alone | A test can run code without checking anything |
+| Number of bugs found by QA | Rewards finding bugs late, not preventing them |
+| Automation percentage | Says nothing about whether the tests catch real defects |
+
+## When to use it (and when not to)
+
+| Use it when | Skip it when |
+|---|---|
+| You want to see a trend over several releases | You have fewer than a handful of releases of data |
+| The team agrees what the metric is for | The metric will be used to rank individuals |
+| You can say what you would change if it moved | The number only goes on a slide |
+
+## TaskFlow example
+
+The table below shows a made-up week for the TaskFlow team. It is an example of how to read the metrics, not a real result.
+
+:::info[Illustrative data]
+These numbers are invented for this example. They are not measurements of TaskFlow or any team.
+:::
+
+| Metric | Week 1 | Week 2 | Week 3 | What it suggests |
+|---|---|---|---|---|
+| Escaped defects in release | 3 | 1 | 1 | Fewer production bugs. Check the cause before celebrating |
+| Flaky test rate | 6% | 4% | 9% | A new flaky test appeared in week 3. Investigate it |
+| Median time to triage a failed build | 2 h | 2 h | 5 h | Failures are waiting longer. Check who owns triage |
+| Acceptance criteria with a test | 70% | 80% | 85% | Coverage of requirements is rising |
+
+The week 3 flaky-test rise is the signal to act on. The team should look at that week's new tests and fix or quarantine them.
+
+Use the same definitions each week. If you change how a defect is counted, note the change in the table.
+
+## Do this
+
+- Pick three to five metrics and write one sentence for each: what it means and what action it triggers. (Recommendation)
+- Look at trends over several releases, not single numbers.
+- Define each metric precisely: what counts, over what period.
+- Review the metrics in a retrospective, and decide one improvement from them.
+- Remove a metric when it stops being useful.
+
+## Avoid this
+
+- Setting targets that make people game the number, such as "90% automation".
+- Comparing teams with different products on the same raw number.
+- Treating stars, counts or dashboards as proof of quality.
+
+## Further reading
+
+- [DORA research, 2018](https://dora.dev/research/2018/dora-report/). Checked 2026-11-06. Names the four original delivery metrics.
+- [DORA metrics guide](https://dora.dev/guides/dora-metrics-four-keys/). Checked 2026-11-06. Lists the current measures.

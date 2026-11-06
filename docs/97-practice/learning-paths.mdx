@@ -1,0 +1,97 @@
+---
+title: Learning paths
+sidebar_position: 97.1
+description: Three reading orders through the handbook, for a manual tester moving into automation, an API tester, or a performance engineer.
+part: 97
+summary: Pick your goal, read the listed pages in order, and do the matching exercises to check what you learned.
+tags: [practice, learning-path, roadmap]
+reading_time: 4
+related: ["/practice/exercises-fundamentals-and-design", "/practice/exercises-automation-and-layers", "/start-here/taskflow-reference"]
+---
+
+<TLDR>
+Three reading orders, one for each goal: a manual tester moving into automation, an API tester, and a performance
+engineer. Each path lists pages in the order to read them. The hour estimates are my rough guesses, not measured study times.
+</TLDR>
+
+## What and why
+
+The handbook has many pages, and it can feel like a wall. A learning path tells you which pages matter for your goal
+and in what order. You do not need to read everything. Paths share some pages, so you can switch goals later without
+losing work.
+
+## How to use a path
+
+Read each page in order. After the test-design pages, try the [Exercises: fundamentals and design](/practice/exercises-fundamentals-and-design).
+After the automation and layer pages, try the [Exercises: automation and layers](/practice/exercises-automation-and-layers).
+Run the TaskFlow app from `examples/taskflow/` when a page asks you to try a rule. Keep a short list of the answers you
+got wrong. That list tells you more than the hour count does.
+
+:::note[Time estimates]
+The hours below are my estimates of reading time plus exercises. They are not measured. Your time will differ,
+especially if you already know some of the topics.
+:::
+
+## Path A: manual tester to automation engineer
+
+About 40 hours. Start with the basics, then the test-design techniques you use by hand, then the automation pages.
+
+1. [What is software testing](/fundamentals/what-is-software-testing)
+2. [Manual vs automated testing](/fundamentals/manual-vs-automated)
+3. [Test levels and test types](/fundamentals/test-levels-and-types)
+4. [Verification vs validation, QA vs QC](/fundamentals/verification-vs-validation)
+5. [Requirements and testability](/planning-strategy/requirements-and-testability)
+6. [Equivalence partitioning and boundary values](/test-design/equivalence-partitioning-and-boundaries)
+7. [Decision table testing](/test-design/decision-tables)
+8. [State transition testing](/test-design/state-transition-testing)
+9. [Writing test cases and traceability](/planning-strategy/writing-test-cases)
+10. [Exploratory testing](/test-design/exploratory-testing)
+11. [UI testing](/testing-by-layer/ui-testing)
+12. [Unit testing and TDD](/testing-by-layer/unit-testing-and-tdd)
+13. [The test automation pyramid](/automation-engineering/test-automation-pyramid)
+14. [Designing an automation framework](/automation-engineering/automation-framework-design)
+15. [Design patterns for test code](/automation-engineering/design-patterns)
+16. [Flaky tests](/automation-engineering/flaky-tests)
+17. [Test data management](/automation-engineering/test-data-management)
+
+## Path B: API tester
+
+About 25 hours. Start with the rules you can check through an API, then the tools and the contract ideas that come
+with them.
+
+1. [Equivalence partitioning and boundary values](/test-design/equivalence-partitioning-and-boundaries)
+2. [Negative and edge-case testing](/test-design/negative-and-edge-cases)
+3. [API testing](/testing-by-layer/api-testing)
+4. [API testing with the Postman CLI](/testing-by-layer/api-testing-with-postman-cli)
+5. [Backend and database testing](/testing-by-layer/backend-and-database-testing)
+6. [Integration and contract testing](/testing-by-layer/integration-and-contract-testing)
+7. [Testing GraphQL, gRPC and WebSocket](/testing-by-layer/other-api-styles)
+8. [Test doubles and service virtualization](/automation-engineering/test-doubles-and-service-virtualization)
+9. [Choosing UI and API test tools](/automation-engineering/choosing-test-tools)
+10. [API security and injection](/other-non-functional/api-security-and-injection)
+11. [How to test a REST API](/playbooks/how-to-test-a-rest-api)
+
+## Path C: performance engineer
+
+About 35 hours. Start with the vocabulary and targets, then the tools, then how results are reported and kept over time.
+
+1. [Performance testing types](/performance-fundamentals/performance-testing-types)
+2. [Performance metrics](/performance-fundamentals/performance-metrics)
+3. [Performance requirements, SLOs and baselines](/performance-fundamentals/performance-requirements-and-slos)
+4. [Workload modelling](/performance-fundamentals/workload-modelling)
+5. [Finding bottlenecks (USE and RED)](/performance-fundamentals/finding-bottlenecks)
+6. [Backend API performance](/performance-by-layer/backend-api-performance)
+7. [Database performance](/performance-by-layer/database-performance)
+8. [Choosing a load testing tool](/load-testing-tools/choosing-a-tool)
+9. [Hands-on: Locust with pytest](/load-testing-tools/locust-with-pytest)
+10. [Hands-on: k6](/load-testing-tools/k6)
+11. [Distributed load and dashboards](/load-testing-tools/distributed-load-and-dashboards)
+12. [Performance strategy and regression testing in CI](/performance-fundamentals/performance-strategy-and-ci)
+13. [How to run a load test end to end](/playbooks/how-to-run-a-load-test-end-to-end)
+14. [Soak tests and memory leaks](/ecs-performance/soak-tests-and-memory-leaks)
+15. [The performance report](/ecs-performance/performance-report)
+
+## After the path
+
+Once you finish a path, try the full scenario in the [TaskFlow Quality & Performance Platform](/capstone/taskflow-quality-platform)
+page. It ties the three goals together on one app.

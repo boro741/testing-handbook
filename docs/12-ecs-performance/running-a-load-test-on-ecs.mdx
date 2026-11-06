@@ -1,0 +1,77 @@
+---
+title: Running a load test against ECS safely
+sidebar_position: 66
+description: How to plan and run a load test against TaskFlow services on ECS without causing an outage, and what AWS's testing policy says.
+part: 12
+summary: Plan the test, set stop rules, and check AWS's testing policy before you send load to AWS resources.
+tags: [aws, ecs, load-testing, safety, policy]
+reading_time: 7
+related: ["/ecs-performance/ecs-architecture", "/ecs-performance/metrics-that-matter", "/load-testing-tools/locust-with-pytest"]
+---
+
+<TLDR>
+A load test on AWS can hurt real users and other teams if you run it carelessly. Test a copy of the system, set stop rules before you start, and read AWS's testing policy first. This chapter is the checklist. The policy summary is as of 2026-11-06, so check the current page before you test.
+</TLDR>
+
+## What and why
+
+A load test sends many requests to find out how a system behaves under pressure. On AWS, that pressure can reach a shared database, a shared load balancer, or the account's own limits. It can also cost money, because ECS tasks and the database bill while they run.
+
+Two things keep a test safe: the right target, and a plan to stop. The target is almost always a staging copy of the services, not production. The plan is a set of stop rules agreed before the first request.
+
+## How it works
+
+AWS's policy for load and stress testing sits on its testing page. As of 2026-11-06, the page says:
+
+- Load tests are "sometimes called stress tests, load tests, or gameday tests." The policy calls them stress tests for network purposes.
+- For AWS-hosted targets, keep the endpoints in the local AWS Region.
+- Volumetric network-based DDoS simulations are prohibited on the Amazon EC2 platform. Those have their own policy.
+- The AWS penetration-testing page prohibits denial-of-service testing and simulated denial of service, including flooding ports, protocols and requests.
+
+The page is written mainly for network stress tests, and it does not list a request form for load tests. Anything designed to overwhelm AWS itself is prohibited. Recommendation: read the current page yourself before any test, and follow your company's rules too. This summary is not legal advice.
+
+The plan has five parts:
+
+1. **Target:** a staging environment with the same task sizes and database type as production. Never run an open-ended test on production.
+2. **Load generator:** a separate machine or task in the same region. It must not be the bottleneck. Check its own CPU.
+3. **Ramp:** raise the request rate in steps, for example 25% at a time, and hold each step.
+4. **Stop rules:** stop when p95 passes the SLO for a few minutes, the error rate passes its limit, or the database nears its connection limit.
+5. **Owner and window:** say who approved the test, when it runs, and who to call.
+
+## When to use it (and when not to)
+
+| Use this checklist when | Skip it when |
+|---|---|
+| Any run that touches a real AWS account, even staging | You are running a Locust script against localhost |
+| A new task size, task count or database setting is being tested | You only want to check that a service is up. Use a smoke test |
+
+## TaskFlow example
+
+Before the illustrative `task-service` test, the team would:
+
+1. Deploy a staging copy of TaskFlow on ECS, with six tasks of 1 vCPU and 2 GB, and an RDS PostgreSQL instance of the same class as production.
+2. Run the Locust script from [the Locust chapter](/load-testing-tools/locust-with-pytest) from one generator task in the same region.
+3. Set stop rules: p95 above 300 ms for three minutes, error rate above 1%, or database connections at the maximum for two minutes.
+4. Start at 50 requests per second and ramp to 450 requests per second over 15 minutes.
+
+:::info[Illustrative data]
+These steps describe a plan. The numbers are invented for the handbook. Nothing was run on a real AWS account.
+:::
+
+## Do this
+
+- Write the stop rules before the test, not during it.
+- Tag every test resource with the owner and the test ID, so you can find and remove it later.
+- Watch the database and the ALB, not only the tasks. The bottleneck is often downstream.
+- Clean up afterwards: stop the generator and scale the service back to its normal count.
+
+## Avoid this
+
+- Running against production, or against a shared database that other teams use.
+- Ramping straight to the peak. You learn nothing about the knee in the curve.
+- Letting the load generator be the bottleneck and blaming the service.
+
+## Further reading
+
+- [AWS: Penetration testing policy](https://aws.amazon.com/security/penetration-testing/) (checked 2026-11-06)
+- [AWS: Testing policy for EC2 and load tests](https://aws.amazon.com/ec2/testing/) (checked 2026-11-06)

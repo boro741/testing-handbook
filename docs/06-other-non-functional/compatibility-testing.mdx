@@ -1,0 +1,80 @@
+---
+title: Compatibility testing
+sidebar_position: 37
+description: How to choose which browsers, devices and operating systems to test, and how to keep the matrix small enough to run.
+part: 6
+summary: Compatibility testing across browsers, devices and operating systems, with a small TaskFlow matrix.
+tags: [compatibility, browsers, devices, non-functional]
+reading_time: 7
+related: ["/test-design/pairwise-testing", "/testing-by-layer/mobile-app-testing", "/testing-by-layer/ui-testing"]
+---
+
+<TLDR>
+Compatibility testing checks that your app works in the browsers, devices and operating systems your users actually use. You cannot test every combination. Pick the combinations that matter most, test those well, and keep a small smoke test for the rest.
+</TLDR>
+
+## What and why
+
+Compatibility testing answers one question: "Does it work on the setups our users have?" A page may look right in Chrome on a laptop and break in Safari on a phone. A screen may overflow on a small Android device.
+
+The variables are:
+
+- **Browser and version** (Chrome, Firefox, Safari, Edge)
+- **Operating system** (Windows, macOS, Android, iOS)
+- **Device type and screen size** (phone, tablet, desktop)
+- **Input method** (touch, mouse, keyboard)
+
+The number of combinations grows fast. Three browsers, two operating systems and three screen sizes already give 18 combinations, before you add versions or roles.
+
+## How it works
+
+The usual approach is a **compatibility matrix**. It is a table of the setups you will test, with a reason for each row.
+
+Each row has a risk level. High-traffic setups get full test runs. Low-traffic setups get a smoke test only. A smoke test is a short run of the most important journeys. (See [the glossary](/start-here/glossary) for more terms.)
+
+To keep the matrix small, use [pairwise testing](/test-design/pairwise-testing). It picks combinations so every pair of values appears at least once, which finds many interaction bugs with far fewer runs.
+
+## When to use it (and when not to)
+
+| Use it when | Skip it when |
+|---|---|
+| The app has a browser UI or a mobile app | The product is a backend service with no screens |
+| Users come from many browsers or devices | Your users are on one managed device type |
+| You change layout, CSS or device features | You change only server-side logic |
+
+## TaskFlow example
+
+TaskFlow has a React web app and Android and iOS apps in production. The local version has one static page at `http://localhost:8000/`. The API behaves the same in every browser, so compatibility risk sits mainly in the UI.
+
+Here is a starting matrix. It is an example plan, not measured results.
+
+| Setup | Priority | Test depth |
+|---|---|---|
+| Chrome on Windows, desktop width | High | Full UI suite |
+| Safari on macOS, desktop width | High | Full UI suite |
+| Safari on iOS, phone width | High | Smoke: login, create task, change status |
+| Chrome on Android, phone width | High | Smoke: login, create task, change status |
+| Firefox on Windows, desktop width | Medium | Smoke only |
+| Edge on Windows, tablet width | Low | Visual check once per release |
+
+Each smoke test uses the same business rules. A task title is 1 to 100 characters. The status flow is TODO → IN_PROGRESS → IN_REVIEW → DONE. These rules come from [the TaskFlow reference](/start-here/taskflow-reference).
+
+Use the same test code for each row. Pass the browser and viewport in as settings, not as copied tests. Playwright, for example, can run one test file across several browser projects. That keeps the cost of extra rows low.
+
+## Do this
+
+- Write the matrix down and review it each release. Remove rows for devices your users no longer use.
+- Use analytics or support data to rank browsers and devices. (Recommendation)
+- Run one shared smoke test on every row, and the full suite only on high-priority rows.
+- Test the layout at phone, tablet and desktop widths.
+- Record the exact browser version with each failure.
+
+## Avoid this
+
+- Claiming "it works everywhere" after testing two browsers.
+- Copying the same test into a separate file for each browser.
+- Testing old browser versions nobody uses, while skipping the current ones.
+
+## Further reading
+
+No external links for this chapter. Usage data for your own product is more useful than generic market figures.

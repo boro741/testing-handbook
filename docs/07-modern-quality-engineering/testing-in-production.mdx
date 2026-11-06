@@ -1,0 +1,81 @@
+---
+title: Testing in production
+sidebar_position: 41
+description: How to check real behaviour after release, safely, using synthetic checks, canary releases and feature flags, with a TaskFlow example.
+part: 7
+summary: Safe testing in production with synthetic checks, canary releases and feature flags.
+tags: [production, canary, feature-flags, synthetic, shift-right]
+reading_time: 8
+related: ["/modern-quality-engineering/shift-left-and-shift-right", "/modern-quality-engineering/observability-for-testers", "/modern-quality-engineering/test-environments"]
+---
+
+<TLDR>
+Testing in production means checking the live system, carefully, after release. It catches problems that test environments miss, such as real traffic patterns and real configuration. Do it with safe checks, small releases that can be rolled back, and a clear rule that no test should harm a real user's data.
+</TLDR>
+
+## What and why
+
+No test environment is identical to production. Data is smaller. Traffic is not real. Third-party services are stubbed. Some problems only appear in production.
+
+Testing in production does not mean testing with real customers' data. It means using safe methods on the live system:
+
+- **Synthetic checks.** A scripted user runs a key journey on a schedule.
+- **Canary releases.** A new version gets a small slice of traffic first. [Martin Fowler's article on canary releases](https://martinfowler.com/bliki/CanaryRelease.html) describes the approach. (Checked 2026-11-06.)
+- **Feature flags.** A new feature is switched on for some users, and off for the rest, without a new release.
+
+## How it works
+
+A feature flag is a switch in code and configuration. It can be changed without a deployment. [OpenFeature](https://openfeature.dev/) is a vendor-neutral standard API for feature flags. (Checked 2026-11-06.) It lets your code stay the same when you change flag provider.
+
+A typical rollout:
+
+1. Deploy the new version with the feature off.
+2. Turn it on for an internal test group.
+3. Turn it on for a small percentage of users. Watch errors and latency.
+4. Widen the rollout, or turn it off if a signal goes bad.
+
+The rollback plan matters more than the rollout plan. Test it before you need it.
+
+## When to use it (and when not to)
+
+| Use it when | Skip it when |
+|---|---|
+| Risk is high and you can roll back quickly | The system cannot be rolled back, such as a data migration |
+| Real traffic patterns matter | A check would write to real users' records |
+| You have monitoring to see the effect | You cannot see errors or latency |
+
+## TaskFlow example
+
+**Synthetic check.** Every five minutes, a scheduled job does this:
+
+1. Log in as a dedicated `synthetic-check` user, not a real person.
+2. Create a task in a project called "Synthetic canary". The title is `synthetic 2026-11-06T10:00`.
+3. Read the task back with `GET /api/tasks/{id}`.
+4. Move it to IN_PROGRESS, then delete it.
+
+If any step fails, or takes too long, the job raises an alert. Keep the steps short. A synthetic check that fills the database with junk is a bug.
+
+**Canary.** A new `task-service` version gets 5% of traffic. If the 5xx rate in the new version rises above the old version's rate, the canary is rolled back. The exact threshold is a team decision, not a standard.
+
+**Flag.** A new "IN_REVIEW" step rule is behind a flag called `strict_review`. It is off for everyone except the QA group. Turning it on for everyone is a separate decision.
+
+These examples describe a plan. The local TaskFlow has no flags, no canary and no scheduler. See [the TaskFlow reference](/start-here/taskflow-reference).
+
+## Do this
+
+- Give synthetic checks their own user, project and clear naming, so they are easy to find and clean up. (Recommendation)
+- Run each synthetic check often enough to catch an outage, but not so often that it adds load. (Recommendation)
+- Write the rollback trigger before you start a canary.
+- Remove flags after the rollout. Old flags add complexity.
+- Use the same metrics for canary and baseline, so the comparison is fair.
+
+## Avoid this
+
+- Writing test data into a real customer's project.
+- Running load tests against production without agreement and limits. See [running a load test against ECS safely](/ecs-performance/running-a-load-test-on-ecs).
+- Keeping a flag forever because no one wants to remove it.
+
+## Further reading
+
+- Martin Fowler, "Canary Release". Checked 2026-11-06. Article dated 2014.
+- OpenFeature. Checked 2026-11-06.

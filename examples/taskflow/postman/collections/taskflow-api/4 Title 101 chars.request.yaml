@@ -1,0 +1,21 @@
+$kind: http-request
+id: 4708c48d78c1d8b9f1103216
+name: 4 Title 101 chars
+method: POST
+url: '{{baseUrl}}/api/tasks'
+body:
+  type: json
+  content: '{"title":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","priority":"LOW","project_id":1}'
+headers:
+  - key: Content-Type
+    value: application/json
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{token}}'
+scripts:
+  - type: afterResponse
+    code: |
+      pm.test("101-character title is rejected (422)", () => pm.response.to.have.status(422));
+    language: text/javascript

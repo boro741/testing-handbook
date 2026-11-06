@@ -1,0 +1,44 @@
+---
+title: How to investigate a production defect
+sidebar_position: 47
+description: A numbered checklist for handling a bug reported from production, from stopping the damage to preventing a repeat.
+part: 8
+summary: Step-by-step checklist for triaging, reproducing, fixing and learning from a production defect.
+tags: [playbook, checklist, production, incident, defects]
+reading_time: 6
+related: ["/planning-strategy/defect-management", "/modern-quality-engineering/observability-for-testers", "/modern-quality-engineering/testing-in-production"]
+---
+
+<TLDR>
+Use this checklist when a bug reaches production. First limit the damage, then gather evidence, reproduce the bug, fix it with a regression test, and write down what you learned. Do not start by guessing the cause.
+</TLDR>
+
+## Checklist
+
+1. **Limit the damage.** Decide how many users are affected and how badly. If a feature flag or a rollback will stop the harm, use it first. See [testing in production](/modern-quality-engineering/testing-in-production).
+2. **Record the facts.** Write down the version running, the time window, the users or accounts affected, and the exact symptom. Use the bug report fields in [defect management](/planning-strategy/defect-management).
+3. **Collect evidence.** Pull logs, metrics and traces for the time window. Look for the request IDs or user IDs from the report. See [observability for testers](/modern-quality-engineering/observability-for-testers).
+4. **Reproduce it.** Use the same version and a data shape like production. If you cannot reproduce it, say so and list what you tried.
+5. **Write a failing test first.** Put the failing case in the test suite, at the lowest level that shows it. See [API testing](/testing-by-layer/api-testing).
+6. **Find the change.** Compare the version that worked with the version that failed. Check config, flags and data, not only code.
+7. **Fix the cause, not only the symptom.** Make the failing test pass. Check that the other tests still pass.
+8. **Check for the same bug elsewhere.** Search for similar code paths and similar inputs.
+9. **Verify in a safe place.** Run the fix in a test environment, then release it gradually. See [test environments](/modern-quality-engineering/test-environments).
+10. **Watch the fix in production.** Confirm the error rate drops, and that no new errors appear.
+11. **Write a blameless postmortem.** Describe what happened, the timeline, the cause, and what would prevent a repeat. Focus on the system, not on people. The [Google SRE book on postmortem culture](https://sre.google/sre-book/postmortem-culture/) describes this approach. Checked 2026-11-06.
+12. **Turn the lesson into a check.** Add a test, a monitor or a review step. Record it in the team's test strategy.
+
+## Example: a task cannot be reopened
+
+A user reports that a DONE task cannot be moved back to work. The business rule is DONE → REOPENED → IN_PROGRESS (see [the TaskFlow reference](/start-here/taskflow-reference)).
+
+- Step 3: search logs for `PUT /api/tasks/{id}` returning 409 in the time window.
+- Step 4: reproduce by sending DONE, then REOPENED, then IN_PROGRESS.
+- Step 5: add a test with those three steps.
+- Step 6: compare the code before and after the last release.
+
+## Done when
+
+- The users affected are no longer affected.
+- A regression test fails before the fix and passes after it.
+- The postmortem is written and shared.

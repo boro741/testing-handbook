@@ -1,0 +1,80 @@
+---
+title: "Capstone project: overview"
+sidebar_position: 97.7
+description: "The TaskFlow capstone project: what you will test, how to set up the app, the six project steps and how your work is checked."
+part: 97
+summary: "Overview of the capstone project on TaskFlow: setup steps, the six project steps, the bug switch and a self-check rubric."
+tags: [practice, capstone, project, taskflow]
+reading_time: 5
+related: ["/practice/learning-paths", "/start-here/taskflow-reference", "/practice/project-1-requirements-and-risk"]
+---
+
+<TLDR>
+The capstone project asks you to test TaskFlow, a small task app, from end to end. You write requirements, design
+tests, automate the API and the UI, check performance and write a report. Each step builds on the one before it.
+</TLDR>
+
+## What and why
+
+Testing skills work best together. A single exercise shows one technique. The capstone shows how the techniques fit
+into one piece of work. You start with a user story, decide what could go wrong, design tests, automate them, measure
+behaviour under load and report what you found.
+
+The app is TaskFlow, the fictional product used across this handbook. Its business rules are on the
+[TaskFlow reference](/start-here/taskflow-reference) page. Treat that page as the source of truth for expected results.
+If the app disagrees with it, write that down as a finding. Do not copy the app's output into your expected results.
+
+The app also has defects. They sit behind a switch: the environment variable `TASKFLOW_BUGS`. The project does not list
+the defects. Finding them is part of the work. The switch and its rules are described in
+`examples/taskflow/bug-hunt/README.md` in the repository. Do not edit `app/main.py` to find a defect. Turn the switch on
+instead.
+
+:::note
+`TASKFLOW_BUGS` is OFF by default. Leave it unset while you learn how the app normally behaves. The app starts as the
+bug-free version until you set the variable.
+:::
+
+## Set up TaskFlow
+
+You need Python 3. Run these commands from the repository. Use one terminal for the server and a second terminal for
+the tests. Activate the virtual environment in both.
+
+```bash
+cd examples/taskflow
+python3 -m venv .venv && . .venv/bin/activate
+pip install -r requirements-dev.txt
+uvicorn app.main:app      # terminal 1: UI at http://localhost:8000, API docs at /docs
+pytest -q                 # terminal 2: offline test suite, no server needed
+```
+
+Give each server run its own database file, for example
+`DATABASE_URL=sqlite:////tmp/my-run.db uvicorn app.main:app`. This keeps data from an earlier run out of your results.
+The demo users are `alice` and `bob`. The reference page lists their passwords.
+
+## The six project steps
+
+Each step has its own page. Try each task before you open any answer.
+
+| Step | Page | You produce |
+|---|---|---|
+| 1 | [Project 1: requirements and risk](/practice/project-1-requirements-and-risk) | Testable requirements and a ranked risk list |
+| 2 | [Project 2: design the tests](/practice/project-2-design-tests) | A test list with boundaries, decision tables, state transitions and traceability |
+| 3 | [Project 3: automate the API](/practice/project-3-automate-the-api) | Automated API tests |
+| 4 | [Project 4: automate the UI](/practice/project-4-automate-the-ui) | Automated browser tests for the main user flows |
+| 5 | [Project 5: performance and capacity](/practice/project-5-performance-and-capacity) | A load test plan, its results and what they mean |
+| 6 | [Project 6: report and retrospective](/practice/project-6-report-and-retro) | A test report and a short retrospective |
+
+## How you will be marked
+
+Nobody grades this project. Use the list below as a self-check after each step. Do not move on until each item is true
+for the step you just finished.
+
+- Every requirement names an input, a condition and an expected result. A tester could write a pass or fail test from it.
+- Every test traces back to a requirement, and every requirement has at least one test.
+- Your tests cover boundary values, invalid input, access rules and state changes, not only the happy path.
+- Expected results come from the TaskFlow reference, not from what the app happens to do.
+- Each failure is shown with the request you sent, the expected result and the actual result.
+- Your report separates what you observed from what you think the cause is.
+- You claim only results that you ran yourself.
+
+Work through the steps in the order of the table. Each page assumes that you finished the one before it.

@@ -1,0 +1,125 @@
+---
+title: Sources
+sidebar_position: 3
+description: Every URL opened for the AI testing chapters and the tool directory, with the result of each check, and the claims we could not verify.
+part: 99
+summary: The links behind the AI testing chapters and tool directory, with check dates and results.
+tags: [sources, references]
+reading_time: 6
+related: ["/appendices/tool-directory", "/ai-in-testing/ai-testing-landscape"]
+---
+
+<TLDR>
+Every link here was opened on 2026-11-06. Repo facts come from the GitHub repo page and the GitHub release API. Company-usage claims are classified, and anything we could not check is listed at the end.
+</TLDR>
+
+## What and why
+
+A handbook page is only as good as its sources. This page lists what we opened, what each source supports, and what happened when we opened it. If a link here stops working, the fact it supports is no longer verified.
+
+## How it works
+
+For each tool, we opened the repo page (licence, description, language, releases) and the GitHub release API (latest release tag and publish date). Where a claim needed more than the repo, we opened the project's docs. Search results were used only to find leads. We did not count a search snippet as a source.
+
+## Links opened
+
+| URL | Supports | Result (2026-11-06) |
+|---|---|---|
+| https://github.com/microsoft/playwright | Licence, description | OK |
+| https://api.github.com/repos/microsoft/playwright/releases/latest | Release v1.65.0, 2026-11-05 | OK |
+| https://playwright.dev/docs/intro | Language list | OK |
+| https://github.com/microsoft/playwright-mcp | Licence, accessibility-tree approach, `npx` use | OK |
+| https://api.github.com/repos/microsoft/playwright-mcp/releases/latest | Release v0.0.84, 2026-10-31 | OK |
+| https://github.com/microsoft/playwright-mcp | MCP server docs (repo README): `npx @playwright/mcp@latest` start command | OK (replaces playwright.dev/docs/mcp, which returned 404) |
+| https://github.com/browser-use/browser-use | Licence, languages, description | OK |
+| https://api.github.com/repos/browser-use/browser-use/releases/latest | Release 0.13.14, 2026-10-26 | OK |
+| https://github.com/browserbase/stagehand | Licence, languages, `act`/`observe`/`extract`, caching | OK |
+| https://api.github.com/repos/browserbase/stagehand/releases/latest | Tag stagehand-server-v3/v3.7.7, 2026-10-23 | OK |
+| https://github.com/appium/appium | Licence, description | OK |
+| https://api.github.com/repos/appium/appium/releases/latest | Tag @appium/opencv@5.0.2, 2026-10-27 | OK |
+| https://appium.io/docs/en/latest/intro/appium/ | Client language statement | OK |
+| https://github.com/promptfoo/promptfoo | Licence, description, CLI | OK |
+| https://api.github.com/repos/promptfoo/promptfoo/releases/latest | Release 0.125.1, 2026-10-25 | OK |
+| https://www.promptfoo.dev/docs/intro/ | Description, CI/CD mention | OK |
+| https://www.promptfoo.dev/docs/configuration/expected-outputs/deterministic | `is-json` and deterministic checks | OK |
+| https://github.com/confident-ai/deepeval | Licence, description | OK |
+| https://api.github.com/repos/confident-ai/deepeval/releases/latest | Release python-v4.2.4, 2026-09-22 | OK |
+| https://deepeval.com/docs/getting-started | Pytest-style run | OK |
+| https://deepeval.com/docs/metrics-introduction | LLM-as-a-judge statement | OK |
+| https://github.com/vibrantlabsai/ragas | Licence, description | OK |
+| https://api.github.com/repos/vibrantlabsai/ragas/releases/latest | Release v0.4.3, 2026-01-13 | OK |
+| https://docs.ragas.io/en/stable/ | Ragas introduction | OK (no metric list on page) |
+| https://github.com/langfuse/langfuse | Licence, `ee` folder note | OK |
+| https://api.github.com/repos/langfuse/langfuse/releases/latest | Release v4.76.0, 2026-11-05 | OK |
+| https://langfuse.com/docs | Feature areas | OK |
+| https://github.com/schemathesis/schemathesis | Licence, description, pytest note | OK |
+| https://api.github.com/repos/schemathesis/schemathesis/releases/latest | Release v4.33.1, 2026-11-04 | OK |
+| https://schemathesis.readthedocs.io/en/stable/ | Description | OK |
+| https://github.com/WebFuzzing/EvoMaster | Licence, "AI-driven" description | OK |
+| https://api.github.com/repos/WebFuzzing/EvoMaster/releases/latest | Release v6.2.0, 2026-09-15 | OK |
+| EvoMaster project site (link removed) | Technique statement | not checked (site unreachable) |
+| https://github.com/keploy/keploy | Licence, AI description, languages | OK |
+| https://api.github.com/repos/keploy/keploy/releases/latest | Release v3.6.221, 2026-11-06 | OK |
+| https://github.com/locustio/locust | Licence, description | OK |
+| https://api.github.com/repos/locustio/locust/releases/latest | Release 2.47.0, 2026-10-21 | OK |
+| https://docs.locust.io/en/stable/ | Docs navigation | Loaded, body text missing. Not used |
+| https://github.com/grafana/k6 | Licence (AGPL-3.0), languages | OK |
+| https://api.github.com/repos/grafana/k6/releases/latest | Release v2.3.0, 2026-09-21 | OK |
+| https://grafana.com/docs/k6/latest/ | Description | OK |
+| https://github.com/artilleryio/artillery | Licence (MPL-2.0), description | OK |
+| https://api.github.com/repos/artilleryio/artillery/releases/latest | Release artillery-2.0.34, 2026-08-14 | OK |
+| https://www.artillery.io/docs | Description | OK |
+| https://github.com/apache/jmeter | Licence (Apache-2.0), description | OK |
+| https://api.github.com/repos/apache/jmeter/releases/latest | Tag rel/v5.6.3, 2024-01-09 | OK |
+| https://jmeter.apache.org/ | Description | OK; no version shown on page |
+| https://github.com/SeleniumHQ/selenium | Licence (Apache-2.0) via GitHub API | OK |
+| https://api.github.com/repos/SeleniumHQ/selenium/releases/latest | Release selenium-4.52.0, 2026-10-29 | OK |
+| https://www.selenium.dev/documentation/webdriver/ | Browsers and language bindings | OK |
+| https://www.selenium.dev/documentation/grid/ | Grid runs tests in parallel on several machines | OK |
+| https://api.github.com/repos/cypress-io/cypress | Licence (MIT) | OK |
+| https://api.github.com/repos/cypress-io/cypress/releases/latest | Release v16.2.1, 2026-10-28 | OK |
+| https://docs.cypress.io/app/get-started/why-cypress | Browsers, Cypress Cloud parallelisation | OK |
+| https://api.github.com/repos/rest-assured/rest-assured | Licence (Apache-2.0) | OK |
+| https://rest-assured.io/ | Project page, not a release: no GitHub release exists, so the release API returned 404 | OK |
+| https://repo1.maven.org/maven2/io/rest-assured/rest-assured/maven-metadata.xml | Release 6.3.0, 2026-10-23 | OK |
+| https://rest-assured.io/ | Description, Scala support | OK |
+| https://api.github.com/repos/encode/httpx | Licence (BSD-3-Clause) | OK |
+| https://api.github.com/repos/encode/httpx/releases/latest | Release 0.28.1, 2024-12-06 | OK |
+| https://www.python-httpx.org/ | HTTP/1.1, HTTP/2, sync and async | OK |
+| https://api.github.com/repos/pytest-dev/pytest | Licence (MIT) | OK |
+| https://api.github.com/repos/pytest-dev/pytest/releases/latest | Release 9.2.0, 2026-10-27 | OK |
+| https://playwright.dev/python/docs/intro | Python usage, browsers, pytest plugin | OK |
+| https://playwright.dev/python/docs/test-runners | `pytest-xdist` parallel runs, `--browser` | OK |
+| https://api.github.com/repos/pact-foundation/pact-python | Licence (MIT) | OK |
+| https://api.github.com/repos/pact-foundation/pact-python/releases/latest | Tag pact-python-ffi/0.5.12.1, 2026-10-23 | OK |
+| https://learning.postman.com/docs/postman-cli/postman-cli-run-collection/ | Local collection run needs no sign-in; protocol limits | OK |
+| https://github.com/postmanlabs/postman-app-support | Repo page, not a release: the repo has no GitHub releases, so the release API returned 404 | OK (repo page loaded; no release listed) |
+| https://owasp.org/projects/top-10-for-large-language-model-applications | OWASP project page | Loaded; list not in fetched text. Not used for list |
+| https://genai.owasp.org/resource/owasp-top-10-for-llm-applications-2025/ | OWASP Top 10 for LLM Applications 2025 | OK |
+| https://genai.owasp.org/llmrisk/llm01-prompt-injection/ | LLM01:2025 Prompt Injection | OK |
+| https://www.plushcap.com/content/semgrep/blog/semgrep-does-your-llm-thing-work-how-we-use-promptfoo | Semgrep blog, promptfoo use (2024-09-06, by Bence Nagy) | OK (third-party mirror) |
+| https://semgrep.dev/blog/2024/does-your-llm-thing-work-how-we-use-promptfoo/ | Original Semgrep URL | Not found (404). Mirror used instead |
+
+## Company and adoption claims
+
+| Claim | Type | Source | Note |
+|---|---|---|---|
+| Semgrep uses Promptfoo to compare models, prompts and context, reviewing results in a self-hosted UI | Documented production use | Semgrep blog post, 2024-09-06 (read via mirror) | Original URL not reachable; mirror text matched |
+| Schemathesis came out of work at Kiwi.com | Documented company origin (per the author's account) | Search-result excerpts of mirrored copies on dev.to and DZone | Neither the mirror nor the original was opened. Treat as unverified |
+| Schemathesis performed best in an ICSE 2022 evaluation | Individual experiment (academic) | ICSE 2022 poster listing, found by search | Not opened; cited only as a research result |
+| Khan Academy uses Langfuse for support debugging | Third-party claim | A vendor-review site | Not checked at source. Left out of the chapters |
+| Browser Use and Stagehand usage | Community opinion | Third-party comparison sites | No first-party case found |
+| Playwright MCP is used by coding agents for test generation | Vendor-adjacent claim | An explainer site | No company source. Left out |
+
+## What we could not verify
+
+- Licence and release date of the Postman CLI; parallelism and CI details for REST Assured, Postman CLI and Selenium; the provider side of Pact on TaskFlow; company use of Selenium, Cypress, REST Assured, Postman CLI and pact-python.
+- Company production use for Playwright, Playwright MCP, Browser Use, Appium, DeepEval, Ragas, Langfuse (beyond the third-party claim above), EvoMaster, Keploy, Locust, k6, Artillery and JMeter.
+- Language and CI integrations for Appium, Ragas, Langfuse, Keploy, Artillery and the MCP servers, where the table says "not verified".
+- The EvoMaster technique beyond the repo's "AI-driven" description, because its site did not load.
+- The full OWASP list beyond LLM01, because the page text fetched did not include it.
+- The Appium main release, because the GitHub API returned a sub-package tag.
+- The JMeter latest version, because the GitHub mirror's latest release is from 2024.
+- Locust body docs, because the docs page did not render its text.
+
+Facts we could not verify are left out of the chapters, or marked "not verified" in the tool directory.

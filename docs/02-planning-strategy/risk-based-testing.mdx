@@ -1,0 +1,74 @@
+---
+title: Risk-based testing
+sidebar_position: 8
+description: How to rank features by risk, so you test the most important things first when time is short.
+part: 2
+summary: Score each feature by likelihood and impact. Spend most of your test effort on the high scores.
+tags: [planning, risk, prioritization]
+reading_time: 5
+related: [/docs/planning-strategy/test-coverage, /docs/planning-strategy/test-strategy-vs-plan]
+---
+
+<TLDR>
+Risk-based testing means you test the riskiest parts of a product first and most deeply. Risk is how likely a problem is multiplied by how bad it would be. You cannot test everything, so use risk to decide where to spend your time.
+</TLDR>
+
+## What and why
+
+A **risk** is a problem that might happen. Its size depends on two things:
+
+- **Likelihood:** how likely the problem is. New or complex code is more likely to fail.
+- **Impact:** how bad it would be. Data loss or a security hole is worse than a typo.
+
+Risk-based testing uses this to order the work. The features with the highest risk get the most tests, the earliest tests and the most careful review.
+
+## How it works
+
+Recommendation: score each feature from 1 (low) to 5 (high) for likelihood and impact. Multiply the two to get the risk score. Test the highest scores first.
+
+| Step | What you do |
+|---|---|
+| 1 | List the features or rules |
+| 2 | Score likelihood and impact |
+| 3 | Multiply to get a risk score |
+| 4 | Assign test depth: deep for high, light for low |
+| 5 | Review the scores after each release |
+
+## When to use it (and when not to)
+
+| Use it when | Skip it when |
+|---|---|
+| Time or people are short | You are testing something tiny and simple |
+| Many features compete for test effort | The product is new and nobody knows the risks yet |
+| Stakeholders must agree what matters most | You need full coverage for regulation (then test everything in scope) |
+
+## TaskFlow example
+
+:::info[Illustrative data]
+The scores below are examples for a teaching exercise. They are not measurements of TaskFlow.
+:::
+
+| Feature | Likelihood | Impact | Score | Test depth |
+|---|---|---|---|---|
+| Assign a task (member-only rule) | 3 | 5 | 15 | Deep: API tests, boundary and negative cases, UI check |
+| Status flow (`TODO` to `DONE`, `REOPENED`) | 3 | 4 | 12 | Deep: every allowed and blocked move |
+| Login and token checks | 2 | 5 | 10 | Medium: valid, wrong password, missing token |
+| Title length (1 to 100) | 2 | 2 | 4 | Light: boundary values only |
+
+The assignment rule scores highest because a wrong assignment would affect other users. The title rule is cheap to test, so one boundary check is enough.
+
+## Do this
+
+- Involve a developer and a product owner when you score.
+- Write the reason for each score, so the scores can be challenged.
+- Re-score when something changes, such as a new integration.
+- Use the score to order your test work, not just to decorate a report.
+
+## Avoid this
+
+- Scoring everything as high. The scores then tell you nothing.
+- Using risk to skip a whole area that nobody has looked at yet.
+
+## Further reading
+
+Risk scores are only as good as your coverage data. See [Test coverage](/planning-strategy/test-coverage) for what coverage can and cannot tell you.

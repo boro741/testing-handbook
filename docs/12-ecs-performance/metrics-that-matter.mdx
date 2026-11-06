@@ -1,0 +1,90 @@
+---
+title: Metrics that matter for ECS
+sidebar_position: 65
+description: The exact CloudWatch metric names to watch for ECS services and an Application Load Balancer, and how to read them together.
+part: 12
+summary: Watch a small set of exact CloudWatch metrics, and read them together. One metric never decides a cause.
+tags: [aws, ecs, cloudwatch, container-insights, alb, metrics]
+reading_time: 7
+related: ["/ecs-performance/ecs-architecture", "/ecs-performance/per-task-capacity-and-task-count", "/performance-fundamentals/performance-metrics"]
+---
+
+<TLDR>
+Watch a few exact CloudWatch metrics from two places: Container Insights for the ECS service, and the Application Load Balancer (ALB). Read them together with your latency numbers. A single metric never proves a cause.
+</TLDR>
+
+## What and why
+
+CloudWatch is AWS's metrics store. Container Insights adds ECS detail. The ALB publishes its own metrics. Looking at every metric wastes time, so pick the ones that answer three questions: is the service busy, is it slow, and is it failing?
+
+The metric names below were checked against the AWS docs on 2026-11-06. Use them exactly, because CloudWatch is case-sensitive.
+
+## How it works
+
+**Container Insights (namespace `ECS/ContainerInsights`, dimensions `ClusterName` and `ServiceName`):**
+
+| Metric | What it tells you | Unit to remember |
+|---|---|---|
+| `CpuUtilized` | CPU used by the tasks | CPU units, not percent |
+| `MemoryUtilized` | Memory used by the tasks | MiB (AWS labels it megabytes) |
+| `RunningTaskCount` | Tasks in the RUNNING state | Count |
+| `DesiredTaskCount` | Tasks the service wants | Count |
+
+**ALB (namespace `AWS/ApplicationELB`):**
+
+| Metric | What it tells you |
+|---|---|
+| `TargetResponseTime` | Time from the ALB sending a request until the task starts replying, in seconds. Use percentiles such as p95 |
+| `RequestCountPerTarget` | Average requests per target in a target group. Its only valid statistic is `Sum` |
+| `HTTPCode_Target_5XX_Count` | 5XX errors returned by the tasks |
+| `HTTPCode_ELB_5XX_Count` | 5XX errors created by the load balancer itself |
+| `UnHealthyHostCount` | Targets that failed their health check |
+
+Two details trip people up. ALB metrics leave out health-check requests. And the ALB only reports a metric when requests are flowing, in 60-second steps, so a missing point can mean no traffic.
+
+### Read them together
+
+A decision table is more useful than any single number. It is a starting point for investigation, not a verdict.
+
+| What you see (with latency or errors) | Investigate, possible recommendation | Owner |
+|---|---|---|
+| CPU high, latency rising with load | CPU-bound. Add tasks, or give each task more vCPU | DevOps |
+| Memory rising steadily during a soak test | Possible leak. Profile first. Raise memory only as a stopgap | Developer |
+| CPU low, latency high | Waiting on the database, a network call or a lock. Check traces and pools | Developer / DBA |
+| DB connections near the maximum | Pool sizing, RDS Proxy, or query tuning | DBA / Developer |
+| Adding tasks does not cut latency | A shared bottleneck, such as the database | Developer / SRE |
+| `HTTPCode_ELB_5XX_Count` rising, target 5XX flat | Unhealthy targets, health-check setup or load balancer capacity | DevOps |
+
+Rules from this table: never recommend a change from one metric, always show the evidence, and never change production automatically. A person reviews every recommendation.
+
+## When to use it (and when not to)
+
+| Use it when | Skip it when |
+|---|---|
+| You need to explain a latency or error change during a load test | You have no load test running and no alarm to set |
+| You are deciding between more tasks and a code or database fix | You want a vendor dashboard. Start with these names instead |
+
+## TaskFlow example
+
+During the illustrative `task-service` test in [The performance report](/ecs-performance/performance-report), CPU averaged 38% at peak, but the database connections sat at the limit. The CPU metric alone would have pointed the wrong way. The connection data and the ALB target response time pointed to the database.
+
+:::info[Illustrative data]
+The values in this example are invented for the handbook. They are not measurements.
+:::
+
+## Do this
+
+- Name the dashboard panels after the exact metric names. It saves time when you search.
+- Always graph the ALB p95 next to `RunningTaskCount`. You can then see whether adding tasks changed latency.
+- Check the units before you compare two runs. CPU units and percent are not the same.
+- Look at `UnHealthyHostCount` using the minimum statistic, as the AWS docs recommend.
+
+## Avoid this
+
+- Reading CPU alone and deciding the service is fine.
+- Treating a missing data point as zero without checking whether there was traffic.
+
+## Further reading
+
+- [AWS: Container Insights metrics for ECS](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Container-Insights-metrics-ECS.html) (checked 2026-11-06)
+- [AWS: CloudWatch metrics for an Application Load Balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-cloudwatch-metrics.html) (checked 2026-11-06)

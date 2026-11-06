@@ -1,0 +1,56 @@
+---
+title: How to size an ECS service
+sidebar_position: 48.7
+description: A numbered checklist from measuring one ECS task to choosing a task count, with the capacity helper and a short report.
+part: 8
+summary: Step-by-step checklist for sizing an ECS service, using the capacity helper for the task count.
+tags: [playbook, checklist, ecs, capacity, performance]
+reading_time: 5
+related: ["/ecs-performance/per-task-capacity-and-task-count", "/ecs-performance/auto-scaling", "/ecs-performance/right-sizing-and-cost", "/ecs-performance/performance-report"]
+---
+
+<TLDR>
+Measure what one task can handle while meeting your SLO. Divide your peak traffic by that number and add headroom. Then set auto scaling around it, trim the task size and report. Nobody has to deploy to AWS to follow the arithmetic.
+</TLDR>
+
+## Checklist
+
+1. **Write the SLO and the peak.** For example p95 under 500 ms and the peak requests per second you expect.
+2. **Run with one task.** Pin the service to one task so the result is per task. See [per-task capacity and task count](/ecs-performance/per-task-capacity-and-task-count).
+3. **Ramp load** until the SLO breaks or CPU, memory or errors saturate. See [running a load test against ECS safely](/ecs-performance/running-a-load-test-on-ecs).
+4. **Take the highest load that met the SLO.** That is `per_task_rps`. Do not use the breaking point.
+5. **Check the limit.** Was it CPU, memory, a database connection pool or the load generator? See [metrics that matter for ECS](/ecs-performance/metrics-that-matter).
+6. **Compute the count.** Use `ceil(peak_rps / per_task_rps * headroom)`. Use the helper below.
+7. **Add a floor.** Keep at least two tasks across two zones for availability.
+8. **Set auto scaling.** Pick a target metric and cooldowns. See [auto scaling](/ecs-performance/auto-scaling).
+9. **Right-size.** Try a smaller or larger task size and compare the cost per request. See [right-sizing and cost](/ecs-performance/right-sizing-and-cost).
+10. **Run a soak test** for memory growth. See [soak tests and memory leaks](/ecs-performance/soak-tests-and-memory-leaks).
+11. **Write the report.** See [the performance report](/ecs-performance/performance-report).
+
+## Example: the capacity helper
+
+Put one row per service in a CSV with `service`, `peak_rps`, `per_task_rps` and an optional `headroom`.
+
+```bash
+cd examples/ecs-capacity
+python capacity.py sample-capacity.csv
+```
+
+Output from the sample file, run locally with the helper's pinned requirements:
+
+```text
+service,peak_rps,per_task_rps,headroom,tasks_needed
+task-service,1200,150,1.3,11
+project-service,300,120,1.3,4
+notification-service,80,40,1.5,3
+```
+
+:::info[Illustrative data]
+The sample CSV is invented. For `task-service`, 1200 / 150 = 8, times 1.3 is 10.4, rounded up to 11. These are not measurements of any real system.
+:::
+
+## Done when
+
+- `per_task_rps` comes from a one-task test that met the SLO.
+- The task count, the floor and the scaling limits are written down.
+- The report states the limit that was found and the cost per request.

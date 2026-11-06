@@ -1,0 +1,76 @@
+---
+title: Test levels and test types
+sidebar_position: 4
+description: The four test levels (unit, integration, system, acceptance) and the main test types, with TaskFlow examples.
+part: 1
+summary: Levels say how much of the system a test covers. Types say what quality the test checks.
+tags: [fundamentals, levels, types, functional, non-functional]
+reading_time: 5
+related: [/docs/fundamentals/sdlc-and-stlc, /docs/fundamentals/manual-vs-automated]
+---
+
+<TLDR>
+A test level says how much of the system a test covers: unit, integration, system or acceptance. A test type says what you check: functional behaviour or a non-functional quality such as speed or security. You pick a level and a type for each test.
+</TLDR>
+
+## What and why
+
+Two words are often confused:
+
+- **Level** is the size of the thing under test. A single function is small. The whole app is large.
+- **Type** is the goal of the test. Does it check what the system does (functional), or how well it does it (non-functional)?
+
+Knowing both helps you choose where a test belongs. It also stops you from testing the same thing at every level.
+
+## How it works
+
+| Level | What it covers | Usually run by |
+|---|---|---|
+| Unit | One function or class, alone | Developers |
+| Integration | Two or more parts working together, such as code and database | Developers and testers |
+| System | The whole product, as a user would see it | Testers |
+| Acceptance | Whether the product meets the business need | Product owner, users, testers |
+
+| Type | Question it answers | Examples |
+|---|---|---|
+| Functional | Does it do what it should? | Login works; a task can be assigned |
+| Non-functional | How well does it do it? | Speed, security, accessibility, reliability |
+| Regression | Did a change break old behaviour? | Re-running the test suite after a fix |
+
+Non-functional testing has many sub-types. These are covered in [security testing](/other-non-functional/security-testing), [accessibility testing](/other-non-functional/accessibility-testing), [compatibility testing](/other-non-functional/compatibility-testing) and [reliability and chaos](/other-non-functional/reliability-and-chaos).
+
+## When to use it (and when not to)
+
+| Use a lower level when | Use a higher level when |
+|---|---|
+| The rule is small and clear (for example, a validator) | You need to see the parts working together |
+| The test must be fast and run on every change | You check the user's full journey |
+
+## TaskFlow example
+
+The TaskFlow title rule (1 to 100 characters) can be tested at several levels:
+
+| Level | Test |
+|---|---|
+| Unit | The title validator rejects a 101-character string |
+| Integration | The API stores a valid title and returns it on `GET /api/tasks/{id}` |
+| System | A user creates a task in the web UI and sees it in the list |
+| Acceptance | The product owner agrees the 100-character limit fits real tasks |
+
+The local TaskFlow suite (`examples/taskflow/tests/test_taskflow_api.py`) covers the integration and API level, using the real API.
+
+## Do this
+
+- Choose the lowest level that can prove the rule.
+- Write functional tests first, then add non-functional checks for the risks you care about.
+- Keep regression tests small and fast, so you can run them often.
+- Name each test so the reader knows its level and type.
+
+## Avoid this
+
+- Testing every rule only through the UI. It is slow and brittle.
+- Calling a non-functional check "done" when no one has set a target for it.
+
+## Further reading
+
+See the [ISTQB syllabus](https://istqb.org/certifications/certified-tester-foundation-level-ctfl-v4-0/) for the standard list of levels and types.

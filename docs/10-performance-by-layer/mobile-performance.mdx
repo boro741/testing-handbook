@@ -1,0 +1,84 @@
+---
+title: Mobile performance
+sidebar_position: 56
+description: Startup time, jank, memory, battery and ANRs on Android and iOS, with the platform tools that measure them. Appium and Maestro only drive the app.
+part: 10
+summary: Measure startup, jank and memory on real devices with platform tools. Drivers do not measure performance.
+tags: [performance, mobile, android, ios, startup, jank, macrobenchmark, perfetto]
+reading_time: 7
+related: ["/testing-by-layer/mobile-app-testing", "/performance-by-layer/frontend-performance", "/performance-fundamentals/performance-testing-types"]
+---
+
+<TLDR>
+Mobile performance covers startup time, jank (dropped frames), memory, CPU, battery, network use, and crashes or ANRs (app not responding). Measure with platform tools: Macrobenchmark and Perfetto on Android, Instruments on iOS, and Firebase Performance Monitoring for real users. Appium and Maestro drive the app, but they do not measure its performance.
+</TLDR>
+
+## What and why
+
+A mobile app runs on many devices, with different chips, memory and battery. It can be stopped and started by the operating system at any time. These facts make mobile performance different from a server.
+
+The main measures are:
+
+- **Startup:** time from tapping the icon to a usable first screen.
+- **Jank:** frames that take too long to draw, so scrolling looks stuttery.
+- **Memory and CPU:** how much the app uses, and whether memory grows.
+- **Battery and network:** how much power and data the app uses.
+- **ANRs and crashes:** an ANR (app not responding) on Android is a freeze the system reports to the user.
+
+## How it works
+
+| Tool | Platform | What it does |
+|---|---|---|
+| **Macrobenchmark** (Jetpack library) | Android | Measures startup and frame timing in a test module, on a physical device |
+| **Perfetto** | Android and Linux | Opens and analyses system traces, showing all processes on the device |
+| **Xcode Instruments** | iOS | The profiler built into Xcode, for CPU, memory and other profiling |
+| **Firebase Performance Monitoring** | Android, iOS, web | Collects data from real users: app start, screen rendering, network requests and custom traces |
+| **Appium**, **Maestro** | Android and iOS | Drivers that tap through the UI. They do not measure performance |
+
+Two rules from the Android documentation apply more widely:
+
+- Measure a release-like build. Debug builds are slower and give misleading numbers.
+- Do not benchmark on an emulator. Macrobenchmark reports an error for emulators because the numbers do not match a real device.
+
+Lab tools (Macrobenchmark, Instruments) give controlled numbers on known devices. Field tools (Firebase) show what real users see across many devices.
+
+## When to use it (and when not to)
+
+| Use it when | Skip it when |
+|---|---|
+| A release changes startup or a long list | A change only touches a settings screen |
+| Users report slow starts or stutter | You have no real device to test on |
+| You want a trend across releases | The app is a thin web wrapper. Use the frontend chapter |
+
+## TaskFlow example
+
+The TaskFlow mobile app is part of the reference architecture, but it is not in this repository. The local TaskFlow has a web UI only.
+
+A startup benchmark for the TaskFlow Android app would:
+
+1. Start the app with a cold start, as the user would.
+2. Wait until the task list for project 1 is on screen. The list calls `GET /api/tasks?project_id=1`.
+3. Repeat the run many times and record startup time with Macrobenchmark.
+4. Keep the trace files, and open the slowest run in Perfetto to see what blocked the first frame.
+
+Appium or Maestro could tap the login button in the same flow. Their timing of the tap is not the app's startup time.
+
+## Do this
+
+- Test release-like, non-debuggable builds on real devices.
+- Repeat each measurement and report the spread, not one run.
+- Keep the trace files from each CI run, so you can compare them later.
+- Use Firebase data to see which screens users actually wait on.
+- Track startup and jank for every release.
+
+## Avoid this
+
+- Benchmarking on an emulator, or on a debug build.
+- Treating a driver's test time as app performance.
+- Ignoring memory. A slow leak shows up only after many screens.
+
+## Further reading
+
+- [Macrobenchmark overview](https://developer.android.com/topic/performance/benchmarking/macrobenchmark-overview), Android Developers. Checked as of 2026-11-06.
+- [Perfetto documentation](https://perfetto.dev/docs/). Perfetto is the default tracing system for Android.
+- [Firebase Performance Monitoring](https://firebase.google.com/docs/perf-mon).

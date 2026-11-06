@@ -1,0 +1,103 @@
+---
+title: Infrastructure as code for the test environment
+sidebar_position: 64.5
+description: How to describe the TaskFlow ECS test environment as Terraform, so every capacity test starts from the same setup.
+part: 12
+summary: Put the cluster, task size, load balancer, scaling switch and alarms in code. Then a capacity test is repeatable and comparable.
+tags: [terraform, infrastructure-as-code, ecs, fargate, capacity-test]
+reading_time: 6
+related: ["/ecs-performance/per-task-capacity-and-task-count", "/ecs-performance/running-a-load-test-on-ecs", "/ecs-performance/alarms-and-dashboards", "/ecs-performance/auto-scaling"]
+---
+
+<TLDR>
+A capacity result is only useful if you can rebuild the same environment and run the same test again. Describing the cluster, task size, load balancer, scaling switch and alarms as Terraform does that. The code in `examples/ecs-capacity/infra/terraform/` passes `terraform validate` (Terraform 1.9.8, AWS provider 6.72.0). It has never been planned or applied.
+</TLDR>
+
+## What and why
+
+A hand-built test environment drifts. Someone changes a task size in the console, or leaves auto scaling on, and two runs are no longer comparable. **Infrastructure as code (IaC)** means you write the environment in text files, keep them in version control, and let a tool create it from them. **Terraform** is one such tool. Its files use a language called HCL.
+
+For a capacity test, IaC gives you three things:
+
+- **Repeatability.** The same code gives the same task size, health check and alarms every time.
+- **A reviewable record.** The task size and the scaling setting for a result are in a commit, not in someone's memory.
+- **Easy cleanup.** One `terraform destroy` removes what the code created, which helps with the cleanup step in [Running a load test against ECS safely](/ecs-performance/running-a-load-test-on-ecs).
+
+## How it works
+
+You describe resources. Terraform compares them with what exists and shows a plan before it changes anything. The example splits the code by topic:
+
+| File | Holds |
+|---|---|
+| `versions.tf` | Terraform and AWS provider versions |
+| `variables.tf` | Every input: task size, image, SLO values, the scaling switch |
+| `main.tf` | ECS cluster with Container Insights, task definition, service |
+| `alb.tf` | Load balancer, target group, listener |
+| `autoscaling.tf` | Target tracking on CPU, created only when switched on |
+| `monitoring.tf` | CloudWatch alarms and a dashboard |
+| `outputs.tf` | The ALB host name and resource names |
+
+The code does not create a VPC. You pass in the VPC id and subnet ids of an existing network. It holds no secrets, no account ids and no credentials. The container image is a variable.
+
+Two design choices matter for testing.
+
+**Task size is a pair of variables.** `task_cpu` defaults to 1024 and `task_memory` to 2048, a valid Fargate pair (see [ECS performance architecture](/ecs-performance/ecs-architecture)). The code checks the CPU value, but not the pair, so use the table.
+
+**Auto scaling is off by default.** The per-task test in [Per-task capacity and task count](/ecs-performance/per-task-capacity-and-task-count) needs one task with scaling off. So `enable_autoscaling` defaults to `false`, and `desired_count` to `1`:
+
+```hcl
+variable "enable_autoscaling" {
+  description = "Create the Application Auto Scaling target and CPU policy."
+  type        = bool
+  default     = false
+}
+
+resource "aws_appautoscaling_target" "task_service" {
+  count        = var.enable_autoscaling ? 1 : 0
+  min_capacity = var.autoscaling_min_tasks
+  max_capacity = var.autoscaling_max_tasks
+  # ...
+}
+```
+
+To test the policy from [Auto scaling](/ecs-performance/auto-scaling), set `enable_autoscaling = true` in a second run. The only difference between the two runs is that one line, which is what makes the comparison fair.
+
+## When to use it (and when not to)
+
+| Use it when | Skip it when |
+|---|---|
+| You will run the capacity test more than once, or compare task sizes | You run one throwaway check on a laptop |
+| Several people need the same environment | Your company already provides a standard module. Use that instead |
+| You want alarms and a dashboard to exist before the test starts | Nobody on the team can review Terraform changes |
+
+## TaskFlow example
+
+The example builds a staging copy of `task-service`: one Fargate task, a target group with a `/health` check (the local TaskFlow app has that endpoint), an HTTP listener and five alarms. You supply the network and image in your own `terraform.tfvars`:
+
+```hcl
+vpc_id                = "vpc-REPLACE_ME"
+alb_subnet_ids        = ["subnet-REPLACE_A", "subnet-REPLACE_B"]
+allowed_ingress_cidrs = ["REPLACE_WITH_LOAD_GENERATOR_CIDR"]
+container_image       = "REPLACE_WITH_IMAGE_URL:TAG"
+```
+
+:::warning[What was and was not checked]
+Validated with `terraform validate` (Terraform 1.9.8, AWS provider 6.72.0) using the `hashicorp/terraform:1.9` image on 2026-11-06. The check ran with no AWS credentials and made no AWS API calls. `terraform fmt -check` also passed. The configuration was never planned or applied.
+:::
+
+Alarm thresholds and the dashboard are covered in [Alarms and dashboards](/ecs-performance/alarms-and-dashboards).
+
+## Do this
+
+- Run `terraform validate` and `terraform plan` before you apply, and read the plan.
+- Use a separate account or a clearly tagged staging area. The code adds an `owner` tag through `owner_tag`.
+- Keep the SLO values in variables, so the alarms and the test pass or fail on the same numbers.
+- Commit the variable values used for each reported run, minus anything private.
+- Destroy the environment after the test.
+
+## Avoid this
+
+- Editing the environment by hand in the console, then re-running the test. The code and the real setup no longer match.
+- Putting passwords, tokens or account ids in `.tf` files or `.tfvars` files that go into the repository.
+- Leaving the HTTP listener open to the internet. Restrict `allowed_ingress_cidrs` to the load generator.
+- Trusting this example as a production module. It is a test environment.

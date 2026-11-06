@@ -1,0 +1,79 @@
+---
+title: Test coverage
+sidebar_position: 9
+description: What test coverage measures (code, requirements, risks), what it does not tell you, and how to use it honestly.
+part: 2
+summary: Coverage shows what tests touched. It does not show whether the tests check the right things.
+tags: [planning, coverage, metrics]
+reading_time: 5
+related: [/docs/planning-strategy/risk-based-testing, /docs/planning-strategy/entry-and-exit-criteria]
+---
+
+<TLDR>
+Test coverage is the share of something that your tests touch. It can be code lines, requirements or risks. High coverage shows that tests ran through the code. It does not show that the tests would catch a bug.
+</TLDR>
+
+## What and why
+
+Coverage answers "what did our tests touch?" It is useful, but people often read more into it than it says.
+
+Three common kinds:
+
+- **Code coverage:** lines or branches of code that ran during tests. Tools such as coverage.py report it.
+- **Requirement coverage:** rules or user stories with at least one test.
+- **Risk coverage:** high-risk features with tests, based on the risk scores from [Risk-based testing](/planning-strategy/risk-based-testing).
+
+Requirement and risk coverage are often more useful than code coverage, because they tell you about the product, not only the code.
+
+## How it works
+
+A test can run a line of code without checking anything about it. The line is "covered", but a bug in it would pass unnoticed.
+
+| Test | Lines run | Checks result? | Catches a wrong result? |
+|---|---|---|---|
+| Calls `create_task("x" * 101)` and assert nothing | Yes | No | No |
+| Calls it and asserts status 422 | Yes | Yes | Yes |
+
+Recommendation: read coverage as a list of gaps. Low coverage tells you where to look. High coverage tells you little on its own.
+
+## When to use it (and when not to)
+
+| Use it when | Do not use it as |
+|---|---|
+| You want to find untested code | A goal on its own |
+| You want to show which rules have tests | Proof that the product is good |
+| You review a new change and want to see what it touches | A reason to write tests that assert nothing |
+
+## TaskFlow example
+
+:::info[Illustrative data]
+The numbers below are examples. They are not measured results.
+:::
+
+Suppose a coverage report for the TaskFlow API shows:
+
+| Module | Line coverage (illustrative) |
+|---|---|
+| Title and priority validation | 95% |
+| Status flow | 90% |
+| Assignment | 60% |
+
+The gap is in assignment. It is the highest-risk rule in the risk table. This is the useful reading: coverage points you to the assignment rule. The next step is to check whether the existing assignment tests assert the right results.
+
+The local suite (`examples/taskflow/tests/test_taskflow_api.py`) has tests for assignment, but none for a non-member caller trying to assign. That is a gap that coverage would not name, because the line runs when any test calls it.
+
+## Do this
+
+- Pair coverage with a check of what each test asserts.
+- Track requirement and risk coverage next to code coverage.
+- Look at uncovered code to find missing tests, not to hit a number.
+- Agree a target only after you know what it costs to reach it.
+
+## Avoid this
+
+- Setting a single coverage number as the goal for everything.
+- Writing tests that run code but assert nothing.
+
+## Further reading
+
+For how coverage fits into release decisions, see [Entry and exit criteria](/planning-strategy/entry-and-exit-criteria).

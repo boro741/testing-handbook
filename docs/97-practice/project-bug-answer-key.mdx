@@ -1,0 +1,60 @@
+---
+title: "Project answer key (spoilers)"
+sidebar_position: 97.14
+description: "Answers to the eight seeded TaskFlow bugs: what each one does, which test catches it, and the command that shows it."
+part: 97
+summary: "Check your bug-hunt results against the verified answers for B01 to B08."
+tags: [practice, project, answers, spoilers]
+reading_time: 4
+related: ["/practice/project-overview", "/practice/project-6-report-and-retro"]
+---
+
+<TLDR>
+The eight seeded bugs, B01 to B08. For each one: what it does, which kind of test catches it, the command that shows it, and the failing test names.
+</TLDR>
+
+:::warning[Spoilers]
+Stop. Try the project first. These are the answers.
+:::
+
+## What and why
+
+The bug switch turns on one bug at a time with the environment variable `TASKFLOW_BUGS`. Each ID makes the app in `examples/taskflow/app/main.py` do one wrong thing. Use this page to check your own results, not to skip the work.
+
+## How to reproduce
+
+Run these commands from `examples/taskflow`:
+
+```bash
+cd examples/taskflow
+TASKFLOW_BUGS=B01 pytest tests -q
+```
+
+Replace `B01` with any ID from B01 to B08. Leave the variable unset to run the bug-free app. With no bug on, all 59 tests in `tests` pass.
+
+## The answers
+
+| ID | What the bug does | Kind of test that catches it | Command | Failing test(s) in `tests` |
+|---|---|---|---|---|
+| B01 | Title length is not checked. A 101-character title is accepted (201). | API boundary test, property-based test | `TASKFLOW_BUGS=B01 pytest tests -q` | `tests/test_taskflow_api.py::test_task_title_length_boundaries[101-422]`, `tests/test_properties.py::test_any_title_over_100_chars_is_rejected` (2 failed) |
+| B02 | Status step skipped. TODO to DONE is allowed (200). | API test of the status rules | `TASKFLOW_BUGS=B02 pytest tests -q` | `tests/test_taskflow_api.py::test_skipping_a_step_is_409` (1 failed) |
+| B03 | Read without membership check. A non-member gets 200 on `GET /api/tasks/{id}`. | Access (security) test | `TASKFLOW_BUGS=B03 pytest tests -q` | `tests/test_security.py::test_non_member_cannot_read_task` (1 failed) |
+| B04 | Assign without member check. Assigning a non-member gets 200. | API test of the assignment rule | `TASKFLOW_BUGS=B04 pytest tests -q` | `tests/test_taskflow_api.py::test_only_project_members_can_be_assigned` (1 failed) |
+| B05 | Delete keeps the row. DELETE returns 204, but a later GET still returns 200. | API test that reads back after a delete | `TASKFLOW_BUGS=B05 pytest tests -q` | `tests/test_taskflow_api.py::test_deleted_task_is_gone` (1 failed) |
+| B06 | Wrong password accepted for bob. Any password works. | Access (security) test for login | `TASKFLOW_BUGS=B06 pytest tests -q` | `tests/test_bug_guards.py::test_bob_with_wrong_password_is_401` (1 failed) |
+| B07 | List ignores project. GET /api/tasks returns tasks from every project. | Access (security) test for the list | `TASKFLOW_BUGS=B07 pytest tests -q` | `tests/test_bug_guards.py::test_list_only_returns_tasks_from_the_requested_project` (1 failed) |
+| B08 | Priority not checked. "URGENT" is accepted (201). | API validation test, property-based test | `TASKFLOW_BUGS=B08 pytest tests -q` | `tests/test_properties.py::test_any_other_priority_is_rejected`, and `tests/test_taskflow_api.py::test_invalid_priorities_are_rejected` with the `URGENT`, `low` and empty values (4 failed) |
+
+The counts are from running each command above. They match the output of `examples/taskflow/bug-hunt/verify_bugs_detectable.py`, which checks that every ID fails at least one test.
+
+## Tests outside `tests`
+
+The full suite, `pytest tests unit bdd doubles -q`, catches more. The bug-hunt `SPOILERS.md` file lists these extra failing tests:
+
+- B01: `unit/test_status_rules.py::test_title_length_rule[101-False]`
+- B04: `bdd/test_assign_task.py::test_assign_a_task_to_someone_who_is_not_a_member_of_the_project`
+- B08: `unit/test_status_rules.py::test_invalid_priority_is_rejected`
+
+Each of these was run with the matching `TASKFLOW_BUGS` value on 2026-11-06 and failed as listed. The B08 unit test fails for three values (`URGENT`, `low` and an empty string). For a live check with curl, the steps and expected status codes are in `examples/taskflow/bug-hunt/SPOILERS.md`.
+
+Bug B01 behaves as described on the default SQLite setup. With Postgres (`docker compose up`), the database column limit would reject a 101-character title with a server error instead of accepting it.

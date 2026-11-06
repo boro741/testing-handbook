@@ -1,0 +1,3 @@
+# Baselines depend on the OS and fonts, so they are generated at run time.
+baselines/
+output/

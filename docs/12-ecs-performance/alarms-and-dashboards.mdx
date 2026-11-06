@@ -1,0 +1,99 @@
+---
+title: Alarms and dashboards
+sidebar_position: 65.5
+description: Which CloudWatch alarms and dashboard widgets matter for the ECS capacity test and for production, with thresholds that come from the SLO.
+part: 12
+summary: Five alarms and six widgets cover the capacity test. Derive every threshold from the SLO, not from a guess.
+tags: [cloudwatch, alarms, dashboards, slo, ecs, alb]
+reading_time: 7
+related: ["/ecs-performance/metrics-that-matter", "/ecs-performance/infrastructure-as-code", "/performance-fundamentals/performance-requirements-and-slos", "/ecs-performance/running-a-load-test-on-ecs"]
+---
+
+<TLDR>
+An alarm turns a metric into a signal that someone acts on. For `task-service`, five alarms cover most of what a capacity test and production need: slow p95, target 5XX errors, unhealthy targets, high CPU and high memory. Write each threshold as a variable derived from the SLO, so the alarm and the test agree on what "bad" means.
+</TLDR>
+
+## What and why
+
+[Metrics that matter for ECS](/ecs-performance/metrics-that-matter) lists what to watch. This page says what to alarm on. During a test, alarms are your stop rules in automated form. In production, they tell you the SLO is at risk before users complain.
+
+An alarm needs a metric, a statistic, a period, a threshold and a number of periods that must breach. Choosing the threshold by feel is the usual mistake. Take it from the SLO instead (see [Performance requirements, SLOs and baselines](/performance-fundamentals/performance-requirements-and-slos)).
+
+## How it works
+
+The metric names below were checked against the AWS docs on 2026-11-06. Names are case-sensitive. Note the two namespaces for ECS: `AWS/ECS` gives CPU and memory as a percent of what the task reserved, which suits alarms. `ECS/ContainerInsights` gives raw usage and task counts, which suits dashboards.
+
+| Alarm | Namespace and metric | Statistic | Threshold as a variable |
+|---|---|---|---|
+| p95 latency | `AWS/ApplicationELB` `TargetResponseTime` (seconds) | `p95` | `slo_p95_ms / 1000` |
+| Target errors | `AWS/ApplicationELB` `HTTPCode_Target_5XX_Count` | `Sum` | `ceil(slo_error_rate_percent / 100 * expected_requests_per_minute)`, at least 1 |
+| Unhealthy targets | `AWS/ApplicationELB` `UnHealthyHostCount` | `Minimum` | above 0 for two periods |
+| CPU | `AWS/ECS` `CPUUtilization` | `Average` | `cpu_alarm_percent` |
+| Memory | `AWS/ECS` `MemoryUtilization` | `Average` | `memory_alarm_percent` |
+
+Facts from the AWS docs that shape these choices:
+
+- `TargetResponseTime` is in seconds, so a 300 ms SLO becomes a 0.3 threshold. Percentile statistics are supported.
+- For `HTTPCode_Target_5XX_Count`, the useful statistic is `Sum`.
+- For `UnHealthyHostCount`, AWS recommends watching the `Minimum` statistic and alarming on a non-zero value for more than one data point. `Minimum` fires only when every load balancer node sees an unhealthy target.
+- ALB metrics appear only while requests flow, and they leave out health-check requests. Set missing data to "not breaching" so a quiet period is not an alarm.
+- ECS sends service CPU and memory utilisation every minute, only for services with running tasks.
+
+Alarms use 60-second periods and need several in a row to breach. This avoids paging on one bad minute.
+
+### Dashboard widgets
+
+| Widget | Metrics | Why |
+|---|---|---|
+| Latency vs SLO | `TargetResponseTime` p95, with a line at the SLO | The main pass/fail signal |
+| Load and tasks | `RequestCountPerTarget` (`Sum`) and `RunningTaskCount` | Shows whether more tasks changed per-task load |
+| Errors | `HTTPCode_Target_5XX_Count` with a line at the alarm limit | Error budget at a glance |
+| Health | `UnHealthyHostCount` (`Minimum`) | Failed health checks |
+| Saturation | `CPUUtilization` and `MemoryUtilization` | CPU-bound or leaking? |
+| Task count | `DesiredTaskCount` and `RunningTaskCount` | Did scaling act, and did tasks start? |
+
+## When to use it (and when not to)
+
+| Use it when | Skip it when |
+|---|---|
+| A capacity test needs automatic stop signals | You need one answer from one run. Read the graphs by hand |
+| The service is in production with an SLO | You have no SLO yet. Write one first |
+
+For production, the same alarms apply with two changes. Send them to a real notification target (`alarm_sns_topic_arns`), and use the production request volume for `expected_requests_per_minute`. Recommendation: alarm on symptoms users feel (latency, errors) first, and treat CPU and memory alarms as early warnings, not as the SLO.
+
+## TaskFlow example
+
+The Terraform in `examples/ecs-capacity/infra/terraform/` (see [Infrastructure as code for the test environment](/ecs-performance/infrastructure-as-code)) creates these five alarms and one dashboard. With the defaults below, the 5XX alarm limit works out like this:
+
+```hcl
+locals {
+  alarm_5xx_threshold = max(1, ceil(var.slo_error_rate_percent / 100 * var.expected_requests_per_minute))
+}
+# 1 / 100 * 9000 = 90 target 5XX responses per minute
+```
+
+:::info[Illustrative data]
+The SLO of 300 ms p95 and 1% errors, the 9,000 requests per minute and the 80% CPU and memory limits are invented examples for the handbook. Replace them with your own SLO and measurements.
+:::
+
+The alarms are not the capacity answer. The one-task test still finds the per-task RPS; the p95 and 5XX alarms show you the moment the SLO breaks. The Terraform that creates these alarms passes `terraform validate` (Terraform 1.9.8, AWS provider 6.72.0, checked 2026-11-06). It has never been planned or applied.
+
+## Do this
+
+- Derive each threshold from the SLO and keep it in a variable, so changing the SLO changes the alarm.
+- Add a line for the SLO on the latency and error widgets.
+- Alarm on the same metric names you graph.
+- Test each alarm once, in staging, by forcing a breach, so you know it can fire.
+- Remember Application Auto Scaling creates its own alarms for target tracking. Do not edit them (see [Auto scaling](/ecs-performance/auto-scaling)).
+
+## Avoid this
+
+- Alarming on average latency. It hides the slow tail. Use a percentile.
+- Setting the CPU alarm as the main alert. A service can fail its SLO at low CPU when the database is slow.
+- Treating "insufficient data" as healthy without checking whether traffic was flowing.
+- Alarms that nobody owns. Every alarm needs a named responder.
+
+## Further reading
+
+- [AWS: CloudWatch metrics for an Application Load Balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-cloudwatch-metrics.html) (checked 2026-11-06)
+- [AWS: Amazon ECS CloudWatch metrics](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/available-metrics.html) (checked 2026-11-06)

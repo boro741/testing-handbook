@@ -1,0 +1,108 @@
+---
+title: API security and injection
+sidebar_position: 35.5
+description: Injection and broken object-level authorization explained, with real security tests for the TaskFlow API.
+part: 6
+summary: SQL injection, the OWASP API Security Top 10 (2023) and BOLA tests you can run against TaskFlow.
+tags: [security, injection, bola, owasp, api]
+reading_time: 8
+related: ["/other-non-functional/security-testing", "/testing-by-layer/api-testing", "/start-here/taskflow-reference"]
+---
+
+<TLDR>
+Injection happens when an app treats user input as code. Broken object-level authorization (BOLA) happens when an API lets you read or change another user's record by changing an ID. Both are easy to test with plain HTTP calls. This page shows 34 runnable TaskFlow tests.
+</TLDR>
+
+## What and why
+
+The general ideas of security testing are in [Security testing fundamentals](/other-non-functional/security-testing). This page goes deeper on two API problems.
+
+**Injection** means an attacker sends text that the app runs as a command. The classic case is **SQL injection**: the app builds a database query by gluing strings together, and the input changes the meaning of the query.
+
+Unsafe code:
+
+```python
+# DO NOT DO THIS
+query = f"SELECT * FROM users WHERE username = '{username}'"
+# username = ' OR '1'='1   ->   ... WHERE username = '' OR '1'='1'   (matches every user)
+```
+
+Safe code uses a **parameterized query**. The database receives the command and the value separately, so the value can never become a command:
+
+```python
+db.scalar(select(User).where(User.username == username))   # what TaskFlow does
+# or in raw SQL: cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
+```
+
+Other injection types follow the same pattern: operating system commands, NoSQL queries, and HTML or script injected into pages (cross-site scripting, XSS). The fix is the same idea: keep data and commands apart.
+
+## How it works
+
+The [OWASP API Security Top 10](https://api-security.owasp.org/editions/2023/en/0x11-t10) is a risk list made for APIs. The latest edition on the OWASP project page is 2023, as of 2026-11-06. Its categories:
+
+| ID | Category |
+|---|---|
+| API1 | Broken Object Level Authorization |
+| API2 | Broken Authentication |
+| API3 | Broken Object Property Level Authorization |
+| API4 | Unrestricted Resource Consumption |
+| API5 | Broken Function Level Authorization |
+| API6 | Unrestricted Access to Sensitive Business Flows |
+| API7 | Server Side Request Forgery |
+| API8 | Security Misconfiguration |
+| API9 | Improper Inventory Management |
+| API10 | Unsafe Consumption of APIs |
+
+API1 is BOLA. Picture `GET /api/tasks/42`. The caller is logged in, but is task 42 theirs? If the server only checks the token and not the project, any user can walk through IDs 1, 2, 3 and read everything. The TaskFlow rule is: **only project members can read or change a task.** Every endpoint that takes a task ID must check membership, and the answer for a stranger is 403.
+
+## When to use it (and when not to)
+
+| Test it when | Skip or limit it when |
+|---|---|
+| An endpoint takes an ID or free text | You do not own the system or lack written permission |
+| You add a new role, project or sharing rule | You only run safe payloads in a shared test environment, never destructive ones |
+
+## TaskFlow example
+
+`examples/taskflow/tests/test_security.py` uses the same `TestClient` pattern as the other API tests. It has three groups.
+
+```python
+@pytest.mark.parametrize("payload", PAYLOADS)   # includes ' OR '1'='1
+def test_injection_in_login_username_is_rejected(client, payload):
+    r = client.post("/api/auth/login", json={"username": payload, "password": payload})
+    assert r.status_code == 401
+
+def test_non_member_cannot_read_task(client, private_task):
+    task_id, stranger = private_task   # alice's task in a project bob is not in
+    assert client.get(f"/api/tasks/{task_id}", headers=stranger).status_code == 403
+```
+
+1. **Injection.** Payloads such as `' OR '1'='1` and `'; DROP TABLE users;--` go into the login username, the password and the task title. Login must return 401, and the title must be stored and returned as plain text.
+2. **BOLA.** Alice creates a project only she belongs to. Bob is a real user, but not a member. He gets 403 on GET, PUT, DELETE and assign.
+3. **Tokens.** A missing token, a made-up token and a wrong scheme (`Basic`) must give 401 on all six task endpoints.
+
+Real run, from `examples/taskflow` with Python 3.12:
+
+```text
+34 passed, 1 warning in 0.52s     # pytest tests/test_security.py
+```
+
+Every test passed. No bug was found, so no `xfail` marker was needed. This does not prove TaskFlow is secure. A passing test only shows that these inputs were handled correctly. Known gaps remain: plain-text passwords, no login rate limit and tokens that never expire (see the security fundamentals page).
+
+## Do this
+
+- Use parameterized queries or an ORM. Never build SQL with string formatting.
+- For every endpoint with an ID, test with a second user who is not allowed. (Recommendation)
+- Test 401 (who are you?) and 403 (you may not) as separate cases.
+- Put payload lists in one parametrized test so adding a payload is one line.
+- Run these tests in CI on every change.
+
+## Avoid this
+
+- Hiding IDs as "security". Random IDs help, but the server must still check access.
+- Checking permissions only in the UI.
+- Running destructive payloads against shared or production systems.
+
+## Further reading
+
+- [OWASP API Security Top 10 (2023)](https://api-security.owasp.org/editions/2023/en/0x11-t10). Checked 2026-11-06.

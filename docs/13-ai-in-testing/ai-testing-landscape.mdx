@@ -1,0 +1,82 @@
+---
+title: The AI testing landscape
+sidebar_position: 72
+description: The main groups of AI testing tools, and a simple checklist for judging vendor claims.
+part: 13
+summary: Groups of AI testing tools, and how to judge a claim before you adopt a tool.
+tags: [ai, testing-tools, evaluation]
+reading_time: 6
+related: ["/appendices/tool-directory", "/ai-in-testing/ai-test-generation", "/ai-in-testing/browser-agents"]
+---
+
+<TLDR>
+"AI testing" covers very different tools. Some call a paid language model, some run with no model at all, and some only summarise logs. Sort each tool into a group first, then check what it needs, whether its output repeats, and what evidence exists that real teams use it.
+</TLDR>
+
+## What and why
+
+AI in testing means using a large language model (LLM), or an AI search technique, to help with testing work. An LLM is a model that reads and writes text. Vendors use the word "AI" for many things, so the word alone tells you very little.
+
+Most of the claims you will see fall into one of six groups.
+
+| Group | What the tool does | Examples | Uses an LLM? |
+|---|---|---|---|
+| Test writing | An LLM writes test code from a story or spec | Playwright plus an LLM assistant ([AI-assisted test generation](/ai-in-testing/ai-test-generation)) | Yes |
+| Spec-based generators | Read an OpenAPI spec and generate many API inputs | Schemathesis, EvoMaster | Schemathesis: no. EvoMaster: its repo calls it AI-driven; not checked here |
+| Browser agents | A model chooses the next click or form entry | Playwright MCP, Browser Use, Stagehand ([Agentic and exploratory testing with browser agents](/ai-in-testing/browser-agents)) | Yes, in most modes |
+| Self-healing | Repair broken locators automatically | Stagehand `act()` and others ([Self-healing tests](/ai-in-testing/self-healing-tests)) | Often |
+| Analysis | Summarise logs, explain regressions | Any LLM with your data ([failure triage](/ai-in-testing/ai-failure-triage), [performance analysis](/ai-in-testing/ai-performance-analysis)) | Yes |
+| Testing AI apps | Score LLM outputs and RAG answers | Promptfoo, DeepEval, Ragas, Langfuse ([Testing LLM and RAG applications](/ai-in-testing/testing-llm-and-rag-apps)) | Often, as the judge |
+
+Load testing tools such as Locust, k6, Artillery and JMeter are a separate world. None of their repo pages that we checked describes an AI feature.
+
+## How to judge a claim
+
+Use this checklist before you trial a tool.
+
+1. **Problem.** What exact task does it solve? Ask for a before and after on one real task.
+2. **Model use.** Does it call a model? Where does your code or data go? Does it need a paid key?
+3. **Repeatability.** Same input, same result? If not, can you still get a fixed pass or fail?
+4. **Licence.** Open source, or open-core (free core, paid extras)? Read it on the repo page.
+5. **Last release.** Take the date from the repo, and write down the date you checked.
+6. **Adoption evidence.** Classify it as one of four types:
+   - documented production use (a company describes its own setup)
+   - community recommendation
+   - individual experiment
+   - vendor marketing
+
+Stars are not evidence of production readiness. A tool with many stars can still be a weekend project.
+
+**Example of the classification.** As of 2026-11-06, Promptfoo has a company write-up from Semgrep (2024) that describes how the team uses it. That is documented production use. Browser Use, in our search, had only third-party reviews. Those count as community opinion, not proof.
+
+## When to use AI tools (and when not to)
+
+| Use it when | Skip it when |
+|---|---|
+| A human will review every output before it becomes a test | The output will run unchecked in CI |
+| The task is text-heavy, such as reading logs or drafting a bug report | The task needs exact numbers, such as a pass/fail SLO check |
+| You can check the result with a deterministic assertion | You cannot say what "correct" looks like |
+| The data you send is allowed to leave your network | The data is secret or personal and no approved model exists |
+
+## TaskFlow example
+
+Every tool in this part is first tried against the local TaskFlow app in `examples/taskflow/`. See [the TaskFlow reference](/start-here/taskflow-reference) for the rules. Run the existing 19 pytest tests before and after any AI-written change. If the AI change breaks them, the change is wrong, whatever the tool says.
+
+## Do this
+
+- Name the group a tool belongs to before you read its features.
+- Write down the date you checked each fact. Facts about releases and licences change.
+- Run each trial on TaskFlow first, then on one real project.
+- Keep a record of what the tool got wrong, not only what it got right.
+- Label any team decision you make from a tool's claim as a **Recommendation**.
+
+## Avoid this
+
+- Adopting a tool because a demo looked good on one page.
+- Treating "AI-powered" as a feature list. Ask what the model does.
+- Sending production data to a model without checking the data policy.
+
+## Further reading
+
+- [Playwright repository](https://github.com/microsoft/playwright). Apache-2.0 licence, latest release v1.65.0 published 2026-11-05 (as of 2026-11-06).
+- [Tool directory](/appendices/tool-directory). Verified facts for each tool, with dates.

@@ -1,0 +1,72 @@
+---
+title: Right-sizing and cost
+sidebar_position: 70
+description: How to pick the smallest ECS task size and task count that still meets the SLO at peak, and how to cut cost without guessing.
+part: 12
+summary: Right-size from measured peak use, never from averages. Verify every scale-down with a test before it reaches production.
+tags: [aws, ecs, fargate, cost, right-sizing, capacity]
+reading_time: 6
+related: ["/ecs-performance/per-task-capacity-and-task-count", "/ecs-performance/auto-scaling", "/ecs-performance/metrics-that-matter"]
+---
+
+<TLDR>
+Right-sizing means choosing the smallest task size and task count that still meets the SLO at peak, with headroom. Cost follows the same numbers: more and bigger tasks cost more. Every scale-down must be proven by a test first, and a cost cut must never hide a bottleneck.
+</TLDR>
+
+## What and why
+
+Cloud cost is a sizing question. A service with too many or too large tasks wastes money. A service with too few breaks its SLO. Right-sizing finds the point between the two.
+
+Your bill rises with the number of tasks, their size and how long they run. This chapter quotes no prices. Check the current AWS pricing page for rates, and use the numbers from your own tests for the sizing.
+
+## How it works
+
+Use three inputs, all measured:
+
+1. **Per-task capacity** at the SLO, from [Per-task capacity and task count](/ecs-performance/per-task-capacity-and-task-count).
+2. **Utilisation at peak**: CPU and memory from Container Insights, read at the peak, not the average (see [Metrics that matter for ECS](/ecs-performance/metrics-that-matter) for the metric names).
+3. **The bottleneck**. If the database is the limit, a smaller task will not help, and a bigger task will not either.
+
+Then work through the options:
+
+- **Too big:** CPU and memory stay low at peak, latency has room, and the database is not the limit. This is a scale-down candidate. Verify it with a load test before you change anything.
+- **Too small:** CPU or memory is near the limit at peak and latency rises with load. Add vCPU, memory or tasks. Check the database first.
+- **Right size:** the SLO holds at peak with headroom, and the bottleneck is known.
+
+Task size must come from a valid pair. The AWS table is in [ECS performance architecture](/ecs-performance/ecs-architecture). An invalid pair is rejected when the task is registered.
+
+## When to use it (and when not to)
+
+| Use it when | Skip it when |
+|---|---|
+| A service has run for weeks and you have peak data | The service is new and has no load data. Measure first |
+| The team wants to cut cost without a new incident | The cut would reduce headroom below the SLO margin |
+
+## TaskFlow example
+
+Take `task-service` in the illustrative test from [The performance report](/ecs-performance/performance-report). It runs six tasks of 1 vCPU and 2 GB. At peak, average task CPU was 38%, and memory was 52%.
+
+:::info[Illustrative data]
+These numbers are invented for the handbook. They are not measurements.
+:::
+
+A tempting cut is to halve the CPU to 0.5 vCPU. This assumes CPU use scales with the load, which may not hold. If it does, the same load would use about 76% of the smaller limit (38% of 1 vCPU is 0.38 vCPU, and 0.38 is 76% of 0.5). That leaves almost no headroom.
+
+The bigger finding is that the peak run was limited by database connections, not CPU. So sizing down the tasks would be the wrong move until the connection problem is fixed.
+
+## Do this
+
+- Size from peak data over at least one normal busy period, not from a quiet week.
+- Keep the headroom you chose in [Per-task capacity and task count](/ecs-performance/per-task-capacity-and-task-count).
+- Fix the bottleneck before you right-size. A faster query can free more capacity than a smaller task.
+- Re-test after every size change and record the result next to the change.
+
+## Avoid this
+
+- Cutting the task count at night without checking the minimum in [auto scaling](/ecs-performance/auto-scaling).
+- Using average CPU as the sizing input. Peaks decide whether the SLO holds.
+- Cutting cost by removing a test or a monitor.
+
+## Further reading
+
+- [AWS: Fargate task CPU and memory combinations](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html) (checked 2026-11-06)

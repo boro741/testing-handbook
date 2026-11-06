@@ -1,0 +1,94 @@
+---
+title: The performance report
+sidebar_position: 71
+description: A 10-section template for a load-test report, a worked example where a service misses its SLO because of database connections, and how the report is generated with Python and Jinja2.
+part: 12
+summary: One report, ten fixed sections, a verdict a manager can read in 30 seconds. The example shows why "add tasks" can be the wrong fix.
+tags: [performance, report, slo, jinja2, ecs, bottleneck]
+reading_time: 9
+related: ["/ecs-performance/per-task-capacity-and-task-count", "/ecs-performance/metrics-that-matter", "/ecs-performance/right-sizing-and-cost", "/performance-fundamentals/performance-requirements-and-slos"]
+---
+
+<TLDR>
+A performance report must give a clear pass or fail against the SLO, then show the evidence and the owners of each fix. Use the ten fixed sections below. In the worked example, `task-service` misses its p95 target because the database connection pool is exhausted, not because of CPU, so adding tasks would make it worse.
+</TLDR>
+
+## What and why
+
+A load test is only useful if people act on it. The report is how they do that. A manager needs the verdict in 30 seconds. An engineer needs the evidence to reproduce the problem. Both need the same ten sections, in the same order, every time, so reports can be compared.
+
+## How it works
+
+The template has ten sections:
+
+1. **Executive summary:** pass or fail against each SLO, in plain words.
+2. **System under test:** services, versions, task sizes and task counts.
+3. **Test environment and load generator:** where the test ran and what generated the load.
+4. **Scenarios:** baseline, normal, peak, stress and soak. Say how each traffic profile was derived.
+5. **Results:** p50, p95 and p99 latency, requests per second, error rate and timeouts, with a chart against the SLO.
+6. **Infrastructure:** ECS CPU and memory, the task count over time, the ALB and the database.
+7. **Comparison with the previous baseline:** a table of deltas.
+8. **Bottleneck analysis:** each hypothesis, the evidence, and the conclusion.
+9. **Recommendations:** split into Infrastructure, Application and Database, each with an owner, a priority and an expected impact.
+10. **Risks, limitations and what was not tested.**
+
+Section 8 is where most reports go wrong. Test one hypothesis at a time, and write down the evidence that rejects each one, not only the one that confirms it.
+
+## The worked example
+
+Here, `task-service` runs six tasks of 1 vCPU and 2 GB. Its SLO is a p95 of 300 ms and an error rate of 1% or less.
+
+:::info[Illustrative data]
+Every number in this example is invented for the handbook. Nothing was measured on a real system. The same data is in `examples/ecs-capacity/sample-results.json`.
+:::
+
+**Executive summary:** FAIL. The baseline at 50 requests per second passed. At 450 requests per second, p95 was 480 ms, which misses the 300 ms SLO.
+
+**Infrastructure:** average task CPU was 38% at peak, and memory was 52%. The database connections sat at 100 of 100 for about eight minutes. The pool wait p95 was 310 ms. The ALB reported no unhealthy hosts.
+
+**Comparison:** the previous run peaked at p95 290 ms with 62 connections in use. Release 2.4.0 raised the pool from 10 to 20 connections per task. Six tasks now allow 120 connections, but the database allows 100.
+
+**Bottlenecks:**
+
+- CPU limits throughput: rejected. CPU had room left.
+- Database connection pool is exhausted: confirmed as the main cause.
+- Slowness on the load balancer path: not the main cause. ALB target response p95 was 470 ms, close to the app's own 480 ms.
+
+**Recommendations:**
+
+- **Database, P1:** keep tasks times pool size below the database limit. Set the pool back to 10 per task, or put RDS Proxy in front. Expected impact: remove the pool wait, then re-test.
+- **Application, P2:** check the task list query for slow SQL, since shorter queries free connections sooner.
+- **Infrastructure, P3:** do not add tasks first. Twelve tasks at 20 connections each would ask for 240 connections against a limit of 100. Re-test after the database fix, then decide on the count.
+
+The "add tasks" fix looks reasonable from the CPU graph alone. The connection data shows it would make the problem worse. That is the core lesson of this chapter.
+
+## Generating the report
+
+The helper in `examples/ecs-capacity/` renders a results file with Jinja2 into `report.html`:
+
+```bash
+cd examples/ecs-capacity
+.venv/bin/python report.py sample-results.json -o report.html
+```
+
+The script refuses to run without a `data_label` in the JSON, and it shows that label as a banner. The verdict is PASS only when every scenario meets both SLO limits. Recommendation: run this step in CI after each load test, so every run produces a report with the same ten sections.
+
+## When to use it (and when not to)
+
+| Use it when | Skip it when |
+|---|---|
+| A load test, soak test or capacity change needs a decision | A quick check that a service responds. A test log is enough |
+| You need to compare two runs | There is no SLO to judge against. Set one first |
+
+## Do this
+
+- Write the verdict first. Fill in the sections after it.
+- Give every recommendation an owner and a priority.
+- Name what was not tested. Readers trust a report that admits its limits.
+- Keep the same ten sections, so reports can be compared over time.
+
+## Avoid this
+
+- Recommending more tasks from a CPU graph without checking the database.
+- Hiding failed scenarios. Show them with the reason.
+- Using sample data in a real report without the Illustrative data label.

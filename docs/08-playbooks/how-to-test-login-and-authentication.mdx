@@ -1,0 +1,46 @@
+---
+title: How to test login and authentication
+sidebar_position: 48.6
+description: A numbered checklist for testing login, tokens, logout and password reset, with the known weaknesses of the TaskFlow demo login.
+part: 8
+summary: Step-by-step checklist for authentication tests, with TaskFlow's demo weaknesses as expected findings.
+tags: [playbook, checklist, security, authentication]
+reading_time: 5
+related: ["/other-non-functional/security-testing", "/other-non-functional/api-security-and-injection", "/testing-by-layer/api-testing"]
+---
+
+<TLDR>
+Test the happy path first, then each way login can go wrong. The local TaskFlow login is a demo with known weaknesses: tokens never expire, passwords are plain text and there is no rate limit. Treat those as findings to report, not as behaviour to copy. Only test systems you own or have approval to test.
+</TLDR>
+
+## Checklist
+
+1. **Happy path.** `POST /api/auth/login` with `alice` and `alice-pass` returns 200 with a token and a user ID. The token opens a protected endpoint.
+2. **Wrong password.** Expect 401 with the message "Wrong username or password". Unknown user gives the same message, so the response does not reveal which names exist.
+3. **Missing and malformed input.** Empty fields, missing fields, very long values. Expect a clean 4xx, never a 500.
+4. **No token or a bad token.** Protected endpoints return 401.
+5. **Lockout and rate limit.** Send many wrong passwords in a row. A real system should slow down or lock the account. TaskFlow does not: expect no lockout. Record it.
+6. **Token expiry.** Wait past the token lifetime and reuse the token. A real system returns 401. TaskFlow keeps tokens in memory and never expires them. Record it.
+7. **Logout.** After logout, the old token must stop working. TaskFlow has no logout endpoint, so a token stays valid until the server restarts.
+8. **Session fixation.** The token must be new at every login. Log in twice and compare tokens. They should differ. A token set before login must not become the logged-in session.
+9. **Password reset.** Test that reset links are single use, expire, and do not reveal whether the account exists. TaskFlow has no reset flow.
+10. **Storage.** Passwords must be hashed. TaskFlow stores them in plain text. That is demo only.
+
+See [security testing fundamentals](/other-non-functional/security-testing) and [API security and injection](/other-non-functional/api-security-and-injection) for the wider checks.
+
+## Example: compare two logins
+
+```bash
+login() { curl -s -X POST http://localhost:8000/api/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"alice","password":"alice-pass"}'; }
+login; echo; login
+```
+
+Not run here. Expect two different tokens, which is the pass for step 8.
+
+## Done when
+
+- Each step has a result: pass, or a recorded finding.
+- The known TaskFlow gaps (no expiry, no rate limit, no logout, plain-text passwords) are logged as findings.
+- Tests for the fixed rules run in CI.
